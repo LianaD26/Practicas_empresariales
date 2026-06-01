@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import 'documento_list_page.dart';
+import 'seguimiento_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -173,6 +175,49 @@ class _HomePageState extends State<HomePage> {
 
                 const SizedBox(height: 24),
 
+                // Sección: Mis recursos
+                const Text(
+                  'Mis Recursos',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Acceso rápido a Documentos
+                _buildNavCard(
+                  icon: Icons.description,
+                  title: 'Mis Documentos',
+                  subtitle: 'Gestiona tus cartas de presentación y hojas de vida',
+                  color: Colors.deepPurple,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DocumentoListPage(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Acceso rápido a Seguimientos
+                _buildNavCard(
+                  icon: Icons.track_changes,
+                  title: 'Seguimientos',
+                  subtitle: 'Consulta el estado de tus postulaciones',
+                  color: Colors.teal,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SeguimientoListPage(
+                        postulacionId: user.uid,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
                 // Botones de acción
                 SizedBox(
                   width: double.infinity,
@@ -193,6 +238,36 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildNavCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: color.withOpacity(0.1),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 12),
+        ),
+        trailing: Icon(Icons.chevron_right, color: color),
+        onTap: onTap,
       ),
     );
   }
