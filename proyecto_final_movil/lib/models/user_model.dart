@@ -1,18 +1,21 @@
+/// Estados posibles de una cuenta de usuario
+enum UserStatus { pendingApproval, active, blocked }
+
 class UserModel {
   final String uid;
   final String email;
-  final String? displayName;
-  final String role; // 'admin', 'user', etc.
+  final String displayName; // Nombre del usuario
+  final String role; // 'student', 'company', 'coordinator'
+  final UserStatus status; // Estado de la cuenta
   final DateTime createdAt;
-  final bool isActive;
 
   UserModel({
     required this.uid,
     required this.email,
-    this.displayName,
+    required this.displayName,
     required this.role,
+    this.status = UserStatus.pendingApproval,
     required this.createdAt,
-    required this.isActive,
   });
 
   /// Convierte el modelo a JSON para guardar en Firestore
@@ -22,22 +25,37 @@ class UserModel {
       'email': email,
       'displayName': displayName,
       'role': role,
+      'status': status.toString().split('.').last, // 'pendingApproval', 'active', 'blocked'
       'createdAt': createdAt,
-      'isActive': isActive,
     };
   }
 
   /// Crea un modelo desde un mapa de Firestore
   factory UserModel.fromMap(Map<String, dynamic> map) {
+    // Convertir string de status a enum
+    UserStatus statusEnum = UserStatus.pendingApproval;
+    if (map['status'] != null) {
+      try {
+        statusEnum = UserStatus.values.firstWhere(
+          (e) => e.toString().split('.').last == map['status'],
+          orElse: () => UserStatus.pendingApproval,
+        );
+      } catch (e) {
+        statusEnum = UserStatus.pendingApproval;
+      }
+    }
+
     return UserModel(
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
-      displayName: map['displayName'],
-      role: map['role'] ?? 'user',
+      displayName: map['displayName'] ?? map['name'] ?? '',
+      role: map['role'] ?? 'student',
+      status: statusEnum,
       createdAt: map['createdAt'] != null
-          ? DateTime.parse(map['createdAt'].toDate().toString())
+          ? (map['createdAt'] is DateTime
+              ? map['createdAt']
+              : DateTime.parse(map['createdAt'].toDate().toString()))
           : DateTime.now(),
-      isActive: map['isActive'] ?? true,
     );
   }
 
@@ -47,16 +65,28 @@ class UserModel {
     String? email,
     String? displayName,
     String? role,
+    UserStatus? status,
     DateTime? createdAt,
-    bool? isActive,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       role: role ?? this.role,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
-      isActive: isActive ?? this.isActive,
     );
   }
+
+  /// Verifica si la cuenta está activa
+  bool get isActive => status == UserStatus.active;
+
+  /// Verifica si la cuenta está bloqueada
+  bool get isBlocked => status == UserStatus.blocked;
+
+  /// Verifica si la cuenta está pendiente de aprobación
+  bool get isPendingApproval => status == UserStatus.pendingApproval;
+
+  /// Verifica si puede acceder a la aplicación
+  bool get canAccessApp => status == UserStatus.active || status == UserStatus.pendingApproval;
 }
