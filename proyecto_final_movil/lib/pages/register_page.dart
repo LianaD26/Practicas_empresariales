@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';import 'package:firebase_auth/firebase_auth.dart';import '../services/auth_service.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
 import '../validators/auth_validators.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -20,6 +22,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _errorMessage;
+  String _selectedRole = 'student'; // Rol seleccionado (student, company, coordinator)
 
   @override
   void dispose() {
@@ -45,7 +48,7 @@ class _RegisterPageState extends State<RegisterPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         displayName: _nameController.text.trim(),
-        role: 'user', // Por defecto 'user', puede cambiar según lógica
+        role: _selectedRole, // Pasar el rol seleccionado
       );
 
       if (mounted) {
@@ -186,6 +189,86 @@ class _RegisterPageState extends State<RegisterPage> {
                   fillColor: Colors.grey.shade50,
                 ),
                 validator: AuthValidators.validateEmail,
+              ),
+              const SizedBox(height: 20),
+
+              // Selector de Rol con Dropdown
+              FormField<String>(
+                initialValue: _selectedRole,
+                validator: (value) {
+                  if (value == null) {
+                    return 'Por favor selecciona un rol';
+                  }
+                  return null;
+                },
+                builder: (FormFieldState<String> state) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Selecciona tu rol',
+                          prefixIcon: const Icon(Icons.person_outline),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          errorText: state.errorText,
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedRole,
+                            isDense: true,
+                            isExpanded: true,
+                            items: [
+                              DropdownMenuItem<String>(
+                                value: 'student',
+                                child: Row(
+                                  children: const [
+                                    Icon(Icons.school, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Estudiante'),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'company',
+                                child: Row(
+                                  children: const [
+                                    Icon(Icons.business, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Empresa'),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'coordinator',
+                                child: Row(
+                                  children: const [
+                                    Icon(Icons.admin_panel_settings, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Coordinador'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            onChanged: _isLoading
+                                ? null
+                                : (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _selectedRole = value;
+                                        state.didChange(value);
+                                      });
+                                    }
+                                  },
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 20),
 

@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart';
+import '../models/user_model.dart'; // Incluye UserStatus enum
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -73,7 +73,7 @@ class AuthService {
     required String email,
     required String password,
     required String displayName,
-    String role = 'user',
+    String role = 'student',
   }) async {
     try {
       final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
@@ -92,8 +92,8 @@ class AuthService {
           email: email,
           displayName: displayName,
           role: role,
+          status: UserStatus.pendingApproval,
           createdAt: DateTime.now(),
-          isActive: true,
         );
 
         await _firestore.collection('users').doc(user.uid).set(userModel.toMap());
@@ -121,7 +121,8 @@ class AuthService {
       final user = userCredential.user;
       if (user != null) {
         // Obtener datos de usuario desde Firestore
-        return await getUserById(user.uid);
+        final userModel = await getUserById(user.uid);
+        return userModel;
       }
       return null;
     } on FirebaseAuthException catch (e) {
@@ -198,11 +199,11 @@ class AuthService {
     }
   }
 
-  /// Actualizar estado activo del usuario
-  Future<void> updateUserActiveStatus(String uid, bool isActive) async {
+  /// Actualizar estado de cuenta del usuario (pendingApproval, active, blocked)
+  Future<void> updateUserStatus(String uid, UserStatus status) async {
     try {
       await _firestore.collection('users').doc(uid).update({
-        'isActive': isActive,
+        'status': status.toString().split('.').last,
       });
     } catch (e) {
       print('Error actualizando estado: $e');

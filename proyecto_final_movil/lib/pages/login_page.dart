@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';import 'package:firebase_auth/firebase_auth.dart';import '../services/auth_service.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
 import '../validators/auth_validators.dart';
 import 'register_page.dart';
 
@@ -67,68 +69,6 @@ class _LoginPageState extends State<LoginPage> {
         message = 'Usuario deshabilitado';
       } else if (e.code == 'too-many-requests') {
         message = 'Demasiados intentos. Intenta más tarde';
-      }
-
-      if (mounted) {
-        setState(() {
-          _errorMessage = message;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Error desconocido: $e';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // registro con Firebase Auth
-  Future<void> _handleRegister() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final user = await _authService.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        displayName: _emailController.text.split('@')[0], // Usar parte del email como display name
-      );
-
-      if (mounted) {
-        if (user != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registro exitoso')),
-          );
-        } else {
-          setState(() {
-            _errorMessage = 'No se pudo obtener datos del usuario';
-          });
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = 'Error en registro';
-
-      if (e.code == 'email-already-in-use') {
-        message = 'El email ya está en uso';
-      } else if (e.code == 'invalid-email') {
-        message = 'Email inválido';
-      } else if (e.code == 'operation-not-allowed') {
-        message = 'Operación no permitida';
-      } else if (e.code == 'weak-password') {
-        message = 'Contraseña demasiado débil';
       }
 
       if (mounted) {
