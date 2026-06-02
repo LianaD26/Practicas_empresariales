@@ -4,6 +4,7 @@ import '../models/empresa_model.dart';
 import '../models/oferta_model.dart';
 import '../models/postulacion_model.dart';
 import '../core/constants.dart';
+import 'permission_service.dart';
 
 /// Servicio centralizado para todas las operaciones con Firestore
 class FirestoreService {
@@ -43,11 +44,11 @@ class FirestoreService {
         .doc(uid)
         .snapshots()
         .map((snapshot) {
-      if (snapshot.exists) {
-        return UserModel.fromMap(snapshot.data() as Map<String, dynamic>);
-      }
-      return null;
-    });
+          if (snapshot.exists) {
+            return UserModel.fromMap(snapshot.data() as Map<String, dynamic>);
+          }
+          return null;
+        });
   }
 
   /// Crea o actualiza un usuario
@@ -66,10 +67,7 @@ class FirestoreService {
   /// Actualiza el estado de un usuario
   Future<void> updateUserStatus(String uid, UserStatus status) async {
     try {
-      await _firestore
-          .collection(FirestoreCollections.users)
-          .doc(uid)
-          .update({
+      await _firestore.collection(FirestoreCollections.users).doc(uid).update({
         'status': status.toString().split('.').last,
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -82,11 +80,10 @@ class FirestoreService {
   /// Lista todos los usuarios
   Future<List<UserModel>> getAllUsers() async {
     try {
-      final snapshot =
-          await _firestore.collection(FirestoreCollections.users).get();
-      return snapshot.docs
-          .map((doc) => UserModel.fromMap(doc.data()))
-          .toList();
+      final snapshot = await _firestore
+          .collection(FirestoreCollections.users)
+          .get();
+      return snapshot.docs.map((doc) => UserModel.fromMap(doc.data())).toList();
     } catch (e) {
       print('Error listando usuarios: $e');
       return [];
@@ -100,9 +97,7 @@ class FirestoreService {
           .collection(FirestoreCollections.users)
           .where('role', isEqualTo: role)
           .get();
-      return snapshot.docs
-          .map((doc) => UserModel.fromMap(doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) => UserModel.fromMap(doc.data())).toList();
     } catch (e) {
       print('Error listando usuarios por rol: $e');
       return [];
@@ -135,11 +130,13 @@ class FirestoreService {
         .doc(id)
         .snapshots()
         .map((snapshot) {
-      if (snapshot.exists) {
-        return EmpresaModel.fromMap(snapshot.data() as Map<String, dynamic>);
-      }
-      return null;
-    });
+          if (snapshot.exists) {
+            return EmpresaModel.fromMap(
+              snapshot.data() as Map<String, dynamic>,
+            );
+          }
+          return null;
+        });
   }
 
   /// Crea o actualiza una empresa
@@ -198,18 +195,19 @@ class FirestoreService {
         .doc(id)
         .snapshots()
         .map((snapshot) {
-      if (snapshot.exists) {
-        return OfertaModel.fromMap(snapshot.data() as Map<String, dynamic>);
-      }
-      return null;
-    });
+          if (snapshot.exists) {
+            return OfertaModel.fromMap(snapshot.data() as Map<String, dynamic>);
+          }
+          return null;
+        });
   }
 
   /// Crea o actualiza una oferta
   Future<String> createOrUpdateOferta(OfertaModel oferta) async {
     try {
-      final docRef =
-          _firestore.collection(FirestoreCollections.offers).doc(oferta.id);
+      final docRef = _firestore
+          .collection(FirestoreCollections.offers)
+          .doc(oferta.id);
       await docRef.set(oferta.toMap(), SetOptions(merge: true));
       return oferta.id;
     } catch (e) {
@@ -242,8 +240,11 @@ class FirestoreService {
         .where('estado', isEqualTo: 'publicada')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => OfertaModel.fromMap(doc.data())).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => OfertaModel.fromMap(doc.data()))
+              .toList(),
+        );
   }
 
   /// Lista ofertas de una empresa
@@ -312,7 +313,9 @@ class FirestoreService {
   }
 
   /// Obtiene postulaciones de un estudiante
-  Future<List<PostulacionModel>> getApplicationsByStudent(String studentId) async {
+  Future<List<PostulacionModel>> getApplicationsByStudent(
+    String studentId,
+  ) async {
     try {
       final snapshot = await _firestore
           .collection(FirestoreCollections.applications)
@@ -329,15 +332,19 @@ class FirestoreService {
   }
 
   /// Stream de postulaciones de un estudiante
-  Stream<List<PostulacionModel>> getApplicationsByStudentStream(String studentId) {
+  Stream<List<PostulacionModel>> getApplicationsByStudentStream(
+    String studentId,
+  ) {
     return _firestore
         .collection(FirestoreCollections.applications)
         .where('studentId', isEqualTo: studentId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PostulacionModel.fromMap(doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PostulacionModel.fromMap(doc.data()))
+              .toList(),
+        );
   }
 
   /// Obtiene postulaciones para una oferta
@@ -364,26 +371,31 @@ class FirestoreService {
         .where('ofertaId', isEqualTo: offerId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PostulacionModel.fromMap(doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PostulacionModel.fromMap(doc.data()))
+              .toList(),
+        );
   }
 
-  /// Actualiza el estado de una postulación
+  /// Actualiza el estado de una postulación.
+  /// REGLA 6: Si [estado] es [PostulacionEstado.rechazado], [motivo] es obligatorio.
   Future<void> updateApplicationStatus(
     String applicationId,
     PostulacionEstado estado, {
     String? motivo,
   }) async {
+    // Aplica la regla 6 antes de persistir
+    PermissionService().validateRejectionReason(estado, motivo);
     try {
       await _firestore
           .collection(FirestoreCollections.applications)
           .doc(applicationId)
           .update({
-        'estado': estado.toString().split('.').last,
-        'motivoRechazo': motivo,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+            'estado': estado.toString().split('.').last,
+            'motivoRechazo': motivo,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
     } catch (e) {
       print('Error actualizando estado de postulación: $e');
       rethrow;
@@ -412,9 +424,11 @@ class FirestoreService {
         .collection(FirestoreCollections.applications)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PostulacionModel.fromMap(doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PostulacionModel.fromMap(doc.data()))
+              .toList(),
+        );
   }
 
   // ============= BATCH OPERATIONS =============
@@ -422,10 +436,7 @@ class FirestoreService {
   /// Eliminación lógica de un documento (soft delete)
   Future<void> softDeleteUser(String uid) async {
     try {
-      await _firestore
-          .collection(FirestoreCollections.users)
-          .doc(uid)
-          .update({
+      await _firestore.collection(FirestoreCollections.users).doc(uid).update({
         'isActive': false,
         'status': 'blocked',
       });

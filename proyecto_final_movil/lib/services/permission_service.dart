@@ -1,4 +1,6 @@
 import '../models/user_model.dart';
+import '../models/oferta_model.dart';
+import '../models/postulacion_model.dart';
 import '../core/constants.dart';
 
 /// Servicio que centraliza la lógica de permisos y autorización
@@ -35,7 +37,8 @@ class PermissionService {
   bool canViewApplications(UserModel user) {
     return user.role == UserRoles.company ||
         user.role == UserRoles.coordinator ||
-        user.role == UserRoles.student; // El estudiante ve sus propias postulaciones
+        user.role ==
+            UserRoles.student; // El estudiante ve sus propias postulaciones
   }
 
   /// Verifica si el usuario puede ver todas las postulaciones
@@ -86,24 +89,25 @@ class PermissionService {
 
   // ============= REGLAS DE NEGOCIO =============
 
-  /// REGLA 1: Un estudiante NO puede postularse dos veces a la misma oferta
-  /// (Esto se valida en la lógica de aplicación, pero aquí está el permiso base)
+  /// REGLA 1: Un estudiante NO puede postularse dos veces a la misma oferta.
+  /// Siempre retorna false — ningún rol puede tener postulaciones duplicadas
+  /// a la misma oferta. La verificación de duplicado real se hace consultando
+  /// [FirestoreService.hasStudentApplied] antes de llamar a [createOrUpdatePostulacion].
   bool canApplyMultipleTimes(UserModel user) {
-    // Estudiantes NO pueden postularse varias veces
-    // Retorna false para evitar duplicados
-    return user.role != UserRoles.student;
+    return false;
   }
 
-  /// REGLA 2: Una oferta cerrada NO recibe postulaciones
-  /// (Validado en el servicio de ofertas)
-  bool canReceiveApplications(bool isClosed) {
-    return !isClosed;
+  /// REGLA 2: Una oferta cerrada NO recibe postulaciones.
+  /// Recibe el [OfertaEstado] para evitar errores de inversión lógica en el caller.
+  /// Solo las ofertas con estado [OfertaEstado.publicada] aceptan postulaciones.
+  bool canReceiveApplications(OfertaEstado estado) {
+    return estado == OfertaEstado.publicada;
   }
 
-  /// REGLA 3: Una postulación debe iniciar con estado "Postulado"
-  /// (Validado en el modelo)
-  String getInitialApplicationState() {
-    return AppStates.applicationStateApplied; // 'postulado'
+  /// REGLA 3: Una postulación debe iniciar con estado [PostulacionEstado.postulado].
+  /// Retorna el enum tipado para evitar incompatibilidades con el modelo.
+  PostulacionEstado getInitialApplicationState() {
+    return PostulacionEstado.postulado;
   }
 
   /// REGLA 4: Solo coordinador puede aprobar/rechazar
@@ -111,12 +115,22 @@ class PermissionService {
     return user.role == UserRoles.coordinator && user.isActive;
   }
 
-  /// REGLA 5: La empresa puede marcar como preseleccionado
+  /// REGLA 5: La empresa puede marcar como preseleccionado.
+  /// Equivalente a [canPreselect] — se mantiene un único método.
   bool canMarkAsPreselected(UserModel user) {
     return user.role == UserRoles.company && user.isActive;
   }
 
-  /// REGLA 6: Una postulación rechazada DEBE tener motivo
+  /// REGLA 6: Una postulación rechazada DEBE tener motivo.
+  /// Valida que [motivo] no sea nulo ni vacío cuando el [estado] es rechazado.
+  /// Lanza [ArgumentError] si la regla se viola.
+  void validateRejectionReason(PostulacionEstado estado, String? motivo) {
+    if (estado == PostulacionEstado.rechazado &&
+        (motivo == null || motivo.trim().isEmpty)) {
+      throw ArgumentError(AppMessages.errorRejectionReasonRequired);
+    }
+  }
+
   bool isRejectionReasonRequired() {
     return true;
   }
