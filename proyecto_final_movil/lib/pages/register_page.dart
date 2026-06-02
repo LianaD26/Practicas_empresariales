@@ -242,16 +242,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ],
                                 ),
                               ),
-                              DropdownMenuItem<String>(
-                                value: 'coordinator',
-                                child: Row(
-                                  children: const [
-                                    Icon(Icons.admin_panel_settings, size: 20),
-                                    SizedBox(width: 12),
-                                    Text('Coordinador'),
-                                  ],
-                                ),
-                              ),
                             ],
                             onChanged: _isLoading
                                 ? null

@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../pages/student_home_page.dart';
 import '../pages/company_home_page.dart';
 import '../pages/coordinator_home_page.dart';
+import '../pages/superadmin_home_page.dart';
 
 class HomePage extends StatefulWidget {
   final UserModel user;
@@ -62,6 +63,8 @@ class _HomePageState extends State<HomePage> {
         return CompanyHomePage(user: widget.user);
       case 'coordinator':
         return CoordinatorHomePage(user: widget.user);
+      case 'superadmin':
+        return SuperAdminHomePage(user: widget.user);
       default:
         return Scaffold(
           appBar: AppBar(

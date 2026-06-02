@@ -3,21 +3,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
-/// Página principal para coordinadores
-/// Pueden aprobar/rechazar postulaciones, gestionar usuarios y ver todo
-class CoordinatorHomePage extends StatefulWidget {
+/// Página principal para Super Administrador
+/// Puede cambiar roles y estados de usuarios
+class SuperAdminHomePage extends StatefulWidget {
   final UserModel user;
 
-  const CoordinatorHomePage({
+  const SuperAdminHomePage({
     super.key,
     required this.user,
   });
 
   @override
-  State<CoordinatorHomePage> createState() => _CoordinatorHomePageState();
+  State<SuperAdminHomePage> createState() => _SuperAdminHomePageState();
 }
 
-class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
+class _SuperAdminHomePageState extends State<SuperAdminHomePage> {
   final AuthService _authService = AuthService();
   int _selectedIndex = 0;
 
@@ -57,9 +57,10 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard - Coordinador'),
+        title: const Text('Dashboard - Super Admin'),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: Colors.deepPurple,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -83,16 +84,8 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: 'Postulaciones',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.people),
-            label: 'Usuarios',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assessment),
-            label: 'Reportes',
+            label: 'Gestionar Usuarios',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -108,12 +101,8 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
       case 0:
         return _buildDashboardTab();
       case 1:
-        return _buildApplicationsTab();
+        return _buildManageUsersTab();
       case 2:
-        return _buildUsersTab();
-      case 3:
-        return _buildReportsTab();
-      case 4:
         return _buildProfileTab();
       default:
         return _buildDashboardTab();
@@ -135,7 +124,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.teal, Colors.tealAccent],
+                  colors: [Colors.deepPurple, Colors.purple],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -146,7 +135,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Bienvenido',
+                    'Bienvenido Super Admin',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
@@ -167,43 +156,9 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
           ),
           const SizedBox(height: 24),
 
-          // Estadísticas rápidas
+          // Acciones principales
           const Text(
-            'Estadísticas',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          _buildStatCard(
-            icon: Icons.folder_special,
-            title: 'Postulaciones',
-            value: '0',
-            color: Colors.blue,
-          ),
-          const SizedBox(height: 12),
-
-          _buildStatCard(
-            icon: Icons.people,
-            title: 'Usuarios',
-            value: '0',
-            color: Colors.green,
-          ),
-          const SizedBox(height: 12),
-
-          _buildStatCard(
-            icon: Icons.work,
-            title: 'Ofertas',
-            value: '0',
-            color: Colors.orange,
-          ),
-          const SizedBox(height: 24),
-
-          // Acciones rápidas
-          const Text(
-            'Acciones Rápidas',
+            'Opciones de Administración',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -212,9 +167,10 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
           const SizedBox(height: 12),
 
           _buildActionCard(
-            icon: Icons.check_circle,
-            title: 'Revisar Postulaciones',
-            description: 'Aprueba o rechaza postulaciones pendientes',
+            icon: Icons.people,
+            title: 'Gestionar Usuarios',
+            description: 'Asignar roles, cambiar estados, bloquear cuentas',
+            color: Colors.deepPurple,
             onTap: () {
               setState(() {
                 _selectedIndex = 1;
@@ -224,13 +180,27 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
           const SizedBox(height: 12),
 
           _buildActionCard(
-            icon: Icons.people,
-            title: 'Gestionar Usuarios',
-            description: 'Administra permisos y estado de cuentas',
+            icon: Icons.security,
+            title: 'Permisos y Roles',
+            description: 'SuperAdmin, Coordinador, Empresa, Estudiante',
+            color: Colors.indigo,
             onTap: () {
-              setState(() {
-                _selectedIndex = 2;
-              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Función en desarrollo')),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+
+          _buildActionCard(
+            icon: Icons.report,
+            title: 'Reportes',
+            description: 'Estadísticas y análisis del sistema',
+            color: Colors.blue,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Función en desarrollo')),
+              );
             },
           ),
         ],
@@ -238,34 +208,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
     );
   }
 
-  Widget _buildApplicationsTab() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'Postulaciones',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Revisa y aprueba postulaciones',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 16),
-            const Text('Página en desarrollo...'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUsersTab() {
+  Widget _buildManageUsersTab() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('users').snapshots(),
       builder: (context, snapshot) {
@@ -303,6 +246,11 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
               'Gestión de Usuarios',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Total: ${users.length} usuarios',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
             const SizedBox(height: 16),
             ...users.map((user) => _buildUserCard(user)).toList(),
           ],
@@ -316,12 +264,14 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
       margin: const EdgeInsets.only(bottom: 12),
       child: ExpansionTile(
         leading: Icon(
-          user.role == 'coordinator'
-              ? Icons.admin_panel_settings
-              : user.role == 'company'
-                  ? Icons.business
-                  : Icons.school,
-          color: Colors.teal,
+          user.role == 'superadmin'
+              ? Icons.security
+              : user.role == 'coordinator'
+                  ? Icons.admin_panel_settings
+                  : user.role == 'company'
+                      ? Icons.business
+                      : Icons.school,
+          color: Colors.deepPurple,
         ),
         title: Text(user.displayName),
         subtitle: Text('${user.email} • ${user.role}'),
@@ -333,16 +283,45 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
               children: [
                 const Divider(),
                 const SizedBox(height: 12),
-                const Text(
-                  'Cambiar Estado:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                const Text('Cambiar Rol:', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(
-                  'Los coordinadores solo pueden cambiar el estado de aprobación de los usuarios.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildRoleButton(
+                        label: 'Estudiante',
+                        role: 'student',
+                        isSelected: user.role == 'student',
+                        onPressed: () => _updateUserRole(user.uid, 'student'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildRoleButton(
+                        label: 'Empresa',
+                        role: 'company',
+                        isSelected: user.role == 'company',
+                        onPressed: () => _updateUserRole(user.uid, 'company'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildRoleButton(
+                        label: 'Coordinador',
+                        role: 'coordinator',
+                        isSelected: user.role == 'coordinator',
+                        onPressed: () => _updateUserRole(user.uid, 'coordinator'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildRoleButton(
+                        label: 'Super Admin',
+                        role: 'superadmin',
+                        isSelected: user.role == 'superadmin',
+                        onPressed: () => _updateUserRole(user.uid, 'superadmin'),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                const Text('Cambiar Estado:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -372,11 +351,32 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
                   'Estado Actual: ${user.status.toString().split('.').last}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  'Creado: ${user.createdAt.toLocal().toString().split('.')[0]}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRoleButton({
+    required String label,
+    required String role,
+    required bool isSelected,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? Colors.deepPurple : Colors.grey.shade300,
+        foregroundColor: isSelected ? Colors.white : Colors.black,
+      ),
+      child: Text(label),
     );
   }
 
@@ -392,50 +392,6 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
         foregroundColor: isSelected ? Colors.white : Colors.black,
       ),
       child: Text(label),
-    );
-  }
-
-  Future<void> _updateUserStatus(String uid, UserStatus status) async {
-    try {
-      await _authService.updateUserStatus(uid, status);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Estado actualizado a ${status.toString().split('.').last}')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  Widget _buildReportsTab() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.assessment, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'Reportes',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Análisis y estadísticas',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 16),
-            const Text('Página en desarrollo...'),
-          ],
-        ),
-      ),
     );
   }
 
@@ -467,8 +423,8 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
 
           _buildProfileCard(
             label: 'Rol',
-            value: 'Coordinador',
-            icon: Icons.admin_panel_settings,
+            value: 'Super Administrador',
+            icon: Icons.security,
           ),
           const SizedBox(height: 12),
 
@@ -482,39 +438,18 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
     );
   }
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon, size: 32, color: color),
-        title: Text(title),
-        trailing: Text(
-          value,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildActionCard({
     required IconData icon,
     required String title,
     required String description,
+    required Color color,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Card(
         child: ListTile(
-          leading: Icon(icon, size: 32, color: Colors.teal),
+          leading: Icon(icon, size: 32, color: color),
           title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: Text(description, maxLines: 2, overflow: TextOverflow.ellipsis),
           trailing: const Icon(Icons.arrow_forward),
@@ -530,10 +465,44 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
   }) {
     return Card(
       child: ListTile(
-        leading: Icon(icon, color: Colors.teal),
+        leading: Icon(icon, color: Colors.deepPurple),
         title: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         subtitle: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
       ),
     );
+  }
+
+  Future<void> _updateUserRole(String uid, String newRole) async {
+    try {
+      await _authService.updateUserRole(uid, newRole);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Rol actualizado a $newRole')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateUserStatus(String uid, UserStatus status) async {
+    try {
+      await _authService.updateUserStatus(uid, status);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Estado actualizado a ${status.toString().split('.').last}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 }
