@@ -8,7 +8,14 @@ class DocumentoFormPage extends StatefulWidget {
   /// Si se pasa un documento existente, se usará para edición
   final DocumentoModel? documento;
 
-  const DocumentoFormPage({super.key, this.documento});
+  /// Tipos que el usuario ya tiene subidos (para restringir duplicados al crear)
+  final Set<TipoDocumento> tiposExistentes;
+
+  const DocumentoFormPage({
+    super.key,
+    this.documento,
+    this.tiposExistentes = const {},
+  });
 
   @override
   State<DocumentoFormPage> createState() => _DocumentoFormPageState();
@@ -21,7 +28,7 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
   final _documentoService = DocumentoService();
   final _authService = AuthService();
 
-  TipoDocumento _tipoSeleccionado = TipoDocumento.hojaDeVida;
+  late TipoDocumento _tipoSeleccionado;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -34,6 +41,13 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
       _nombreController.text = widget.documento!.nombre;
       _urlController.text = widget.documento!.url;
       _tipoSeleccionado = widget.documento!.tipo;
+    } else {
+      final disponibles = TipoDocumento.values
+          .where((t) => !widget.tiposExistentes.contains(t))
+          .toList();
+      _tipoSeleccionado = disponibles.isNotEmpty
+          ? disponibles.first
+          : TipoDocumento.hojaDeVida;
     }
   }
 
@@ -73,9 +87,11 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEditing
-                ? 'Documento actualizado correctamente'
-                : 'Documento creado correctamente'),
+            content: Text(
+              _isEditing
+                  ? 'Documento actualizado correctamente'
+                  : 'Documento creado correctamente',
+            ),
           ),
         );
         Navigator.of(context).pop();
@@ -151,10 +167,16 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
                   prefixIcon: Icon(Icons.category),
                 ),
                 items: TipoDocumento.values
-                    .map((tipo) => DropdownMenuItem(
-                          value: tipo,
-                          child: Text(tipo.label),
-                        ))
+                    .where(
+                      (tipo) =>
+                          _isEditing || !widget.tiposExistentes.contains(tipo),
+                    )
+                    .map(
+                      (tipo) => DropdownMenuItem(
+                        value: tipo,
+                        child: Text(tipo.label),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) {
                   if (value != null) {
@@ -169,10 +191,21 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
               // URL del documento
               TextFormField(
                 controller: _urlController,
-                decoration: const InputDecoration(
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
                   labelText: 'URL del documento',
                   hintText: 'https://drive.google.com/...',
-                  prefixIcon: Icon(Icons.link),
+                  prefixIcon: const Icon(Icons.link),
+                  suffixIcon: _urlController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          tooltip: 'Limpiar',
+                          onPressed: () {
+                            _urlController.clear();
+                            setState(() {});
+                          },
+                        )
+                      : null,
                 ),
                 validator: DocumentoValidators.validateUrl,
                 keyboardType: TextInputType.url,

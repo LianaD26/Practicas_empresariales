@@ -222,11 +222,12 @@ class FirestoreService {
       final snapshot = await _firestore
           .collection(FirestoreCollections.offers)
           .where('estado', isEqualTo: 'publicada')
-          .orderBy('createdAt', descending: true)
           .get();
-      return snapshot.docs
+      final list = snapshot.docs
           .map((doc) => OfertaModel.fromMap(doc.data()))
           .toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
     } catch (e) {
       print('Error listando ofertas publicadas: $e');
       return [];
@@ -238,13 +239,42 @@ class FirestoreService {
     return _firestore
         .collection(FirestoreCollections.offers)
         .where('estado', isEqualTo: 'publicada')
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
+        .map((snapshot) {
+          final list = snapshot.docs
               .map((doc) => OfertaModel.fromMap(doc.data()))
-              .toList(),
-        );
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        });
+  }
+
+  /// Stream de ofertas de una empresa (tiempo real)
+  Stream<List<OfertaModel>> getOfertasByCompanyStream(String companyId) {
+    return _firestore
+        .collection(FirestoreCollections.offers)
+        .where('empresaId', isEqualTo: companyId)
+        .snapshots()
+        .map((snapshot) {
+          final list = snapshot.docs
+              .map((doc) => OfertaModel.fromMap(doc.data()))
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        });
+  }
+
+  /// Elimina una oferta por ID
+  Future<void> deleteOferta(String ofertaId) async {
+    try {
+      await _firestore
+          .collection(FirestoreCollections.offers)
+          .doc(ofertaId)
+          .delete();
+    } catch (e) {
+      print('Error eliminando oferta: $e');
+      rethrow;
+    }
   }
 
   /// Lista ofertas de una empresa
@@ -253,11 +283,12 @@ class FirestoreService {
       final snapshot = await _firestore
           .collection(FirestoreCollections.offers)
           .where('empresaId', isEqualTo: companyId)
-          .orderBy('createdAt', descending: true)
           .get();
-      return snapshot.docs
+      final list = snapshot.docs
           .map((doc) => OfertaModel.fromMap(doc.data()))
           .toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
     } catch (e) {
       print('Error listando ofertas de empresa: $e');
       return [];
@@ -320,11 +351,12 @@ class FirestoreService {
       final snapshot = await _firestore
           .collection(FirestoreCollections.applications)
           .where('studentId', isEqualTo: studentId)
-          .orderBy('createdAt', descending: true)
           .get();
-      return snapshot.docs
+      final list = snapshot.docs
           .map((doc) => PostulacionModel.fromMap(doc.data()))
           .toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
     } catch (e) {
       print('Error listando postulaciones del estudiante: $e');
       return [];
@@ -338,13 +370,14 @@ class FirestoreService {
     return _firestore
         .collection(FirestoreCollections.applications)
         .where('studentId', isEqualTo: studentId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
+        .map((snapshot) {
+          final list = snapshot.docs
               .map((doc) => PostulacionModel.fromMap(doc.data()))
-              .toList(),
-        );
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        });
   }
 
   /// Obtiene postulaciones para una oferta
@@ -353,11 +386,12 @@ class FirestoreService {
       final snapshot = await _firestore
           .collection(FirestoreCollections.applications)
           .where('ofertaId', isEqualTo: offerId)
-          .orderBy('createdAt', descending: true)
           .get();
-      return snapshot.docs
+      final list = snapshot.docs
           .map((doc) => PostulacionModel.fromMap(doc.data()))
           .toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
     } catch (e) {
       print('Error listando postulaciones de oferta: $e');
       return [];
@@ -369,13 +403,14 @@ class FirestoreService {
     return _firestore
         .collection(FirestoreCollections.applications)
         .where('ofertaId', isEqualTo: offerId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
+        .map((snapshot) {
+          final list = snapshot.docs
               .map((doc) => PostulacionModel.fromMap(doc.data()))
-              .toList(),
-        );
+              .toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        });
   }
 
   /// Actualiza el estado de una postulación.

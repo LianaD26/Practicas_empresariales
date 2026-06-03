@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/documento_model.dart';
 import '../services/documento_service.dart';
 import '../services/auth_service.dart';
@@ -19,73 +20,84 @@ class DocumentoListPage extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis Documentos'),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DocumentoFormPage()),
-        ),
-        tooltip: 'Agregar documento',
-        child: const Icon(Icons.add),
-      ),
-      body: StreamBuilder<List<DocumentoModel>>(
-        stream: documentoService.getDocumentosPorUsuarioStream(currentUser.uid),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return StreamBuilder<List<DocumentoModel>>(
+      stream: documentoService.getDocumentosPorUsuarioStream(currentUser.uid),
+      builder: (context, snapshot) {
+        final documentos = snapshot.data ?? [];
+        final tiposExistentes = documentos.map((d) => d.tipo).toSet();
+        final allTypesCovered = TipoDocumento.values.every(
+          (t) => tiposExistentes.contains(t),
+        );
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          final documentos = snapshot.data ?? [];
-
-          if (documentos.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.description_outlined, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No tienes documentos aún',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Mis Documentos'),
+            centerTitle: true,
+            elevation: 0,
+          ),
+          floatingActionButton: allTypesCovered
+              ? null
+              : FloatingActionButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          DocumentoFormPage(tiposExistentes: tiposExistentes),
+                    ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Toca el botón + para agregar uno',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: documentos.length,
-            itemBuilder: (context, index) {
-              final doc = documentos[index];
-              return _DocumentoCard(
-                documento: doc,
-                onEdit: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DocumentoFormPage(documento: doc),
-                  ),
+                  tooltip: 'Agregar documento',
+                  child: const Icon(Icons.add),
                 ),
-                onDelete: () => _confirmDelete(context, doc, documentoService),
-              );
-            },
-          );
-        },
-      ),
+          body: snapshot.connectionState == ConnectionState.waiting
+              ? const Center(child: CircularProgressIndicator())
+              : snapshot.hasError
+              ? Center(child: Text('Error: \${snapshot.error}'))
+              : documentos.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.description_outlined,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'No tienes documentos aún',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Toca el botón + para agregar uno',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: documentos.length,
+                  itemBuilder: (context, index) {
+                    final doc = documentos[index];
+                    return _DocumentoCard(
+                      documento: doc,
+                      onEdit: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DocumentoFormPage(
+                            documento: doc,
+                            tiposExistentes: tiposExistentes,
+                          ),
+                        ),
+                      ),
+                      onDelete: () =>
+                          _confirmDelete(context, doc, documentoService),
+                    );
+                  },
+                ),
+        );
+      },
     );
   }
 
@@ -117,15 +129,15 @@ class DocumentoListPage extends StatelessWidget {
       try {
         await service.eliminarDocumento(doc.id);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Documento eliminado')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Documento eliminado')));
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al eliminar: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
         }
       }
     }
@@ -171,6 +183,33 @@ class _DocumentoCard extends StatelessWidget {
             Text(
               'Subido: ${_formatFecha(documento.fechaSubida)}',
               style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    documento.url,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.deepPurple,
+                    ),
+                    maxLines: 1,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 16, color: Colors.grey),
+                  tooltip: 'Copiar enlace',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: documento.url));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Enlace copiado')),
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ),

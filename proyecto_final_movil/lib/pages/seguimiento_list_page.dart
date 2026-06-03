@@ -6,7 +6,14 @@ import 'seguimiento_form_page.dart';
 class SeguimientoListPage extends StatelessWidget {
   final String postulacionId;
 
-  const SeguimientoListPage({super.key, required this.postulacionId});
+  /// Cuando es true, el estudiante solo puede ver; no puede agregar, editar ni eliminar
+  final bool readOnly;
+
+  const SeguimientoListPage({
+    super.key,
+    required this.postulacionId,
+    this.readOnly = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,19 +25,23 @@ class SeguimientoListPage extends StatelessWidget {
         centerTitle: true,
         elevation: 0,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SeguimientoFormPage(postulacionId: postulacionId),
-          ),
-        ),
-        tooltip: 'Agregar seguimiento',
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: readOnly
+          ? null
+          : FloatingActionButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      SeguimientoFormPage(postulacionId: postulacionId),
+                ),
+              ),
+              tooltip: 'Agregar seguimiento',
+              child: const Icon(Icons.add),
+            ),
       body: StreamBuilder<List<SeguimientoModel>>(
-        stream: seguimientoService
-            .getSeguimientosPorPostulacionStream(postulacionId),
+        stream: seguimientoService.getSeguimientosPorPostulacionStream(
+          postulacionId,
+        ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -43,20 +54,26 @@ class SeguimientoListPage extends StatelessWidget {
           final seguimientos = snapshot.data ?? [];
 
           if (seguimientos.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.track_changes_outlined, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
+                  const Icon(
+                    Icons.track_changes_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
                     'No hay seguimientos aún',
                     style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'Toca el botón + para agregar uno',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    readOnly
+                        ? 'Aún no hay actualizaciones de tu proceso'
+                        : 'Toca el botón + para agregar uno',
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ],
               ),
@@ -70,17 +87,21 @@ class SeguimientoListPage extends StatelessWidget {
               final seg = seguimientos[index];
               return _SeguimientoCard(
                 seguimiento: seg,
-                onEdit: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SeguimientoFormPage(
-                      postulacionId: postulacionId,
-                      seguimiento: seg,
-                    ),
-                  ),
-                ),
-                onDelete: () =>
-                    _confirmDelete(context, seg, seguimientoService),
+                readOnly: readOnly,
+                onEdit: readOnly
+                    ? () {}
+                    : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SeguimientoFormPage(
+                            postulacionId: postulacionId,
+                            seguimiento: seg,
+                          ),
+                        ),
+                      ),
+                onDelete: readOnly
+                    ? () {}
+                    : () => _confirmDelete(context, seg, seguimientoService),
               );
             },
           );
@@ -123,9 +144,9 @@ class SeguimientoListPage extends StatelessWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al eliminar: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
         }
       }
     }
@@ -134,11 +155,13 @@ class SeguimientoListPage extends StatelessWidget {
 
 class _SeguimientoCard extends StatelessWidget {
   final SeguimientoModel seguimiento;
+  final bool readOnly;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _SeguimientoCard({
     required this.seguimiento,
+    required this.readOnly,
     required this.onEdit,
     required this.onDelete,
   });
@@ -206,19 +229,24 @@ class _SeguimientoCard extends StatelessWidget {
             ),
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'editar') onEdit();
-            if (value == 'eliminar') onDelete();
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'editar', child: Text('Editar')),
-            PopupMenuItem(
-              value: 'eliminar',
-              child: Text('Eliminar', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
+        trailing: readOnly
+            ? null
+            : PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'editar') onEdit();
+                  if (value == 'eliminar') onDelete();
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'editar', child: Text('Editar')),
+                  PopupMenuItem(
+                    value: 'eliminar',
+                    child: Text(
+                      'Eliminar',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

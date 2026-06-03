@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import '../models/oferta_model.dart';
+import '../models/postulacion_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
+import 'oferta_form_page.dart';
+import 'seguimiento_list_page.dart';
 
 /// Página principal para empresas
 /// Pueden crear/editar ofertas, ver postulaciones y preseleccionar candidatos
 class CompanyHomePage extends StatefulWidget {
   final UserModel user;
 
-  const CompanyHomePage({
-    super.key,
-    required this.user,
-  });
+  const CompanyHomePage({super.key, required this.user});
 
   @override
   State<CompanyHomePage> createState() => _CompanyHomePageState();
@@ -18,6 +20,7 @@ class CompanyHomePage extends StatefulWidget {
 
 class _CompanyHomePageState extends State<CompanyHomePage> {
   final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
   int _selectedIndex = 0;
 
   Future<void> _handleLogout() async {
@@ -44,9 +47,9 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
         await _authService.signOut();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -76,22 +79,13 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
           });
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work),
-            label: 'Mis Ofertas',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
+          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Mis Ofertas'),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
             label: 'Postulantes',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
     );
@@ -139,10 +133,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
                 children: [
                   const Text(
                     'Bienvenido',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -162,10 +153,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
           // Información útil
           const Text(
             '¿Qué puedes hacer?',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
@@ -174,11 +162,10 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
             icon: Icons.work_outline,
             title: 'Crear Oferta',
             description: 'Publica una nueva oferta de práctica',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Crear oferta en desarrollo')),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OfertaFormPage()),
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -209,58 +196,193 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
     );
   }
 
+  // ─── MIS OFERTAS ───────────────────────────────────────────
   Widget _buildOffersTab() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.work, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'Mis Ofertas',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Gestiona tus ofertas de práctica',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 16),
-            const Text('Página en desarrollo...'),
-          ],
+    final companyId = widget.user.uid;
+
+    return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const OfertaFormPage()),
         ),
+        icon: const Icon(Icons.add),
+        label: const Text('Nueva Oferta'),
+        backgroundColor: Colors.orange,
+      ),
+      body: StreamBuilder<List<OfertaModel>>(
+        stream: _firestoreService.getOfertasByCompanyStream(companyId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final ofertas = snapshot.data ?? [];
+          if (ofertas.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.work_off, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No tienes ofertas publicadas',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Toca + para crear tu primera oferta',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+            itemCount: ofertas.length,
+            itemBuilder: (context, i) {
+              final oferta = ofertas[i];
+              return _OfertaCard(
+                oferta: oferta,
+                firestoreService: _firestoreService,
+                onEdit: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => OfertaFormPage(oferta: oferta),
+                  ),
+                ),
+                onDelete: () => _confirmDeleteOferta(oferta),
+                onVerPostulantes: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => _PostulantesOfertaPage(oferta: oferta),
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
 
-  Widget _buildApplicantsTab() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.people, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'Postulantes',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Candidatos a tus ofertas',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 16),
-            const Text('Página en desarrollo...'),
-          ],
+  Future<void> _confirmDeleteOferta(OfertaModel oferta) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Eliminar Oferta'),
+        content: Text(
+          '¿Eliminar "${oferta.titulo}"? Esta acción no se puede deshacer.',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
       ),
     );
+    if (confirmed ?? false) {
+      try {
+        await _firestoreService.deleteOferta(oferta.id);
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Oferta eliminada')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      }
+    }
+  }
+
+  // ─── POSTULANTES ───────────────────────────────────────────
+  Widget _buildApplicantsTab() {
+    final companyId = widget.user.uid;
+
+    return StreamBuilder<List<OfertaModel>>(
+      stream: _firestoreService.getOfertasByCompanyStream(companyId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final ofertas = snapshot.data ?? [];
+        if (ofertas.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Crea ofertas para ver postulantes',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: ofertas.length,
+          itemBuilder: (context, i) {
+            final oferta = ofertas[i];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                leading: const Icon(Icons.work_outline, color: Colors.orange),
+                title: Text(
+                  oferta.titulo,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  _estadoOfertaLabel(oferta.estado),
+                  style: TextStyle(color: _estadoOfertaColor(oferta.estado)),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => _PostulantesOfertaPage(oferta: oferta),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _estadoOfertaLabel(OfertaEstado estado) {
+    switch (estado) {
+      case OfertaEstado.publicada:
+        return 'Publicada';
+      case OfertaEstado.borrador:
+        return 'Borrador';
+      case OfertaEstado.cerrado:
+        return 'Cerrada';
+    }
+  }
+
+  Color _estadoOfertaColor(OfertaEstado estado) {
+    switch (estado) {
+      case OfertaEstado.publicada:
+        return Colors.green;
+      case OfertaEstado.borrador:
+        return Colors.grey;
+      case OfertaEstado.cerrado:
+        return Colors.red;
+    }
   }
 
   Widget _buildProfileTab() {
@@ -317,8 +439,15 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
       child: Card(
         child: ListTile(
           leading: Icon(icon, size: 32, color: Colors.orange),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(description, maxLines: 2, overflow: TextOverflow.ellipsis),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
           trailing: const Icon(Icons.arrow_forward),
         ),
       ),
@@ -333,8 +462,420 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
     return Card(
       child: ListTile(
         leading: Icon(icon, color: Colors.orange),
-        title: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        subtitle: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        title: Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        subtitle: Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── TARJETA DE OFERTA ────────────────────────────────────────────────────────
+class _OfertaCard extends StatelessWidget {
+  final OfertaModel oferta;
+  final FirestoreService firestoreService;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onVerPostulantes;
+
+  const _OfertaCard({
+    required this.oferta,
+    required this.firestoreService,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onVerPostulantes,
+  });
+
+  Color _estadoColor(OfertaEstado estado) {
+    switch (estado) {
+      case OfertaEstado.publicada:
+        return Colors.green;
+      case OfertaEstado.borrador:
+        return Colors.grey;
+      case OfertaEstado.cerrado:
+        return Colors.red;
+    }
+  }
+
+  String _estadoLabel(OfertaEstado estado) {
+    switch (estado) {
+      case OfertaEstado.publicada:
+        return 'Publicada';
+      case OfertaEstado.borrador:
+        return 'Borrador';
+      case OfertaEstado.cerrado:
+        return 'Cerrada';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    oferta.titulo,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (v) {
+                    if (v == 'editar') onEdit();
+                    if (v == 'eliminar') onDelete();
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'editar', child: Text('Editar')),
+                    PopupMenuItem(
+                      value: 'eliminar',
+                      child: Text(
+                        'Eliminar',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              oferta.descripcion,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _estadoColor(oferta.estado).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _estadoColor(oferta.estado).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Text(
+                    _estadoLabel(oferta.estado),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _estadoColor(oferta.estado),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.people, size: 16, color: Colors.grey.shade500),
+                const SizedBox(width: 4),
+                Text(
+                  '${oferta.vacantes} vacante(s)',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: onVerPostulantes,
+                  icon: const Icon(Icons.people, size: 16),
+                  label: const Text('Postulantes'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── PÁGINA: POSTULANTES DE UNA OFERTA ───────────────────────────────────────
+class _PostulantesOfertaPage extends StatelessWidget {
+  final OfertaModel oferta;
+
+  const _PostulantesOfertaPage({required this.oferta});
+
+  @override
+  Widget build(BuildContext context) {
+    final firestoreService = FirestoreService();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(oferta.titulo, overflow: TextOverflow.ellipsis),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: StreamBuilder<List<PostulacionModel>>(
+        stream: firestoreService.getApplicationsByOfferStream(oferta.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final postulaciones = snapshot.data ?? [];
+          if (postulaciones.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Nadie se ha postulado aún',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: postulaciones.length,
+            itemBuilder: (context, i) {
+              final post = postulaciones[i];
+              return _PostulanteCard(
+                postulacion: post,
+                firestoreService: firestoreService,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ─── TARJETA DE POSTULANTE (empresa gestiona estado + seguimiento) ────────────
+class _PostulanteCard extends StatelessWidget {
+  final PostulacionModel postulacion;
+  final FirestoreService firestoreService;
+
+  const _PostulanteCard({
+    required this.postulacion,
+    required this.firestoreService,
+  });
+
+  Color _estadoColor(PostulacionEstado estado) {
+    switch (estado) {
+      case PostulacionEstado.postulado:
+        return Colors.blue;
+      case PostulacionEstado.preseleccionado:
+        return Colors.orange;
+      case PostulacionEstado.aprobado:
+        return Colors.green;
+      case PostulacionEstado.rechazado:
+        return Colors.red;
+    }
+  }
+
+  String _estadoLabel(PostulacionEstado estado) {
+    switch (estado) {
+      case PostulacionEstado.postulado:
+        return 'Postulado';
+      case PostulacionEstado.preseleccionado:
+        return 'Preseleccionado';
+      case PostulacionEstado.aprobado:
+        return 'Aprobado';
+      case PostulacionEstado.rechazado:
+        return 'Rechazado';
+    }
+  }
+
+  Future<void> _cambiarEstado(
+    BuildContext context,
+    PostulacionModel post,
+  ) async {
+    PostulacionEstado? nuevoEstado;
+    String? motivo;
+
+    nuevoEstado = await showDialog<PostulacionEstado>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: const Text('Cambiar estado'),
+        children: PostulacionEstado.values
+            .map(
+              (e) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, e),
+                child: Text(_estadoLabel(e)),
+              ),
+            )
+            .toList(),
+      ),
+    );
+
+    if (nuevoEstado == null) return;
+
+    if (nuevoEstado == PostulacionEstado.rechazado) {
+      final controller = TextEditingController();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Motivo de rechazo'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'Ingresa el motivo'),
+            maxLines: 2,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || controller.text.trim().isEmpty) return;
+      motivo = controller.text.trim();
+    }
+
+    try {
+      await firestoreService.updateApplicationStatus(
+        post.id,
+        nuevoEstado,
+        motivo: motivo,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Estado actualizado')));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _estadoColor(postulacion.estado);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FutureBuilder<UserModel?>(
+              future: firestoreService.getUserById(postulacion.studentId),
+              builder: (context, snap) {
+                final user = snap.data;
+                return Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: color.withOpacity(0.15),
+                      child: Icon(Icons.person, color: color),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.displayName ?? 'Estudiante',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            user?.email ?? postulacion.studentId,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    _estadoLabel(postulacion.estado),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => _cambiarEstado(context, postulacion),
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Estado'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                TextButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SeguimientoListPage(
+                        postulacionId: postulacion.id,
+                        readOnly: false,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.track_changes, size: 16),
+                  label: const Text('Seguimiento'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.deepPurple,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+            if (postulacion.estado == PostulacionEstado.rechazado &&
+                postulacion.motivoRechazo != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Motivo: ${postulacion.motivoRechazo}',
+                style: const TextStyle(fontSize: 12, color: Colors.red),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
