@@ -13,6 +13,7 @@ import 'repositories/postulation_repository.dart';
 import 'repositories/document_repository.dart';
 import 'repositories/follow_up_repository.dart';
 import 'repositories/company_repository.dart';
+import 'services/session_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,32 +64,42 @@ class MyApp extends StatelessWidget {
           update: (_, db, __) => CompanyRepository(db),
         ),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Proyecto Final Móvil',
-        builder: (context, child) {
-          return Column(
-            children: [
-              const OfflineSyncBanner(),
-              Expanded(child: child ?? const SizedBox.shrink()),
-            ],
-          );
+      child: Builder(
+        builder: (context) {
+          return Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) {
+              SessionManager().resetTimer(context);
+            },
+            child: MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'Proyecto Final Móvil',
+              builder: (context, child) {
+                return Column(
+                  children: [
+                    const OfflineSyncBanner(),
+                    Expanded(child: child ?? const SizedBox.shrink()),
+                  ],
+                );
         },
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          inputDecorationTheme: InputDecorationTheme(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.deepPurple,
+              brightness: Brightness.light,
+            ),
+            useMaterial3: true,
+            inputDecorationTheme: InputDecorationTheme(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
-        ),
-        home: AuthWrapper(),
-      ),
-    );
+          home: AuthWrapper(),
+      ), // MaterialApp
+    ); // Listener
+  },
+), // Builder
+    ); // MultiProvider
   }
 }

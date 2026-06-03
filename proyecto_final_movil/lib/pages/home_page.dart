@@ -5,6 +5,7 @@ import '../pages/student_home_page.dart';
 import '../pages/company_home_page.dart';
 import '../pages/coordinator_home_page.dart';
 import '../pages/superadmin_home_page.dart';
+import '../services/session_manager.dart';
 
 class HomePage extends StatefulWidget {
   final UserModel user;
@@ -42,6 +43,7 @@ class _HomePageState extends State<HomePage> {
 
     if (confirmed ?? false) {
       try {
+        SessionManager().stopTimer();
         await _authService.signOut();
       } catch (e) {
         if (mounted) {

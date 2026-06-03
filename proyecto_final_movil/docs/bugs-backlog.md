@@ -52,6 +52,16 @@
 
 **Responsable:** Liana
 
+### BUG-005
+
+**Descripción:** Inconsistencias visuales con las postulaciones a las que se ha eliminado su oferta. No aparece como disponible pero la UI queda con el mensaje de "Cargando...", donde lo más adecuado es eliminar la postulación y notificar.
+
+**Impacto:** Alto
+
+**Estado:** Pendiente
+
+**Responsable:** Liana
+
 # Bugs corregidos
 
 ### BUG-FIX-001
