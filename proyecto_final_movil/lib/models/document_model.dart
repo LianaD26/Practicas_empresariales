@@ -17,7 +17,7 @@ enum TipoDocumento {
   }
 }
 
-class DocumentoModel {
+class DocumentModel {
   final String id;
   final String nombre;
   final TipoDocumento tipo;
@@ -25,7 +25,7 @@ class DocumentoModel {
   final DateTime fechaSubida;
   final String usuarioId;
 
-  DocumentoModel({
+  DocumentModel({
     required this.id,
     required this.nombre,
     required this.tipo,
@@ -47,8 +47,8 @@ class DocumentoModel {
   }
 
   /// Crea un modelo desde un mapa de Firestore
-  factory DocumentoModel.fromMap(Map<String, dynamic> map) {
-    return DocumentoModel(
+  factory DocumentModel.fromMap(Map<String, dynamic> map) {
+    return DocumentModel(
       id: map['id'] ?? '',
       nombre: map['nombre'] ?? '',
       tipo: TipoDocumento.fromValue(map['tipo'] ?? 'hoja_de_vida'),
@@ -63,7 +63,7 @@ class DocumentoModel {
   }
 
   /// Copia el modelo con cambios
-  DocumentoModel copyWith({
+  DocumentModel copyWith({
     String? id,
     String? nombre,
     TipoDocumento? tipo,
@@ -71,7 +71,7 @@ class DocumentoModel {
     DateTime? fechaSubida,
     String? usuarioId,
   }) {
-    return DocumentoModel(
+    return DocumentModel(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       tipo: tipo ?? this.tipo,

@@ -9,6 +9,9 @@
 -- SuperAdmin:
 * Gestionar todos los tipos de usuarios, sea para cambiar su estado o para conocer cuáles están registrados
 
+-- Empresa:
+* Crear ofertas
+
 
 # Funcionalidades pendientes:
 -- Estudiante:

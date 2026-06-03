@@ -1,53 +1,46 @@
 import 'package:flutter/material.dart';
-import '../models/documento_model.dart';
-import '../services/documento_service.dart';
+import '../models/document_model.dart';
+import '../services/document_service.dart';
 import '../services/auth_service.dart';
-import '../validators/documento_validators.dart';
+import '../validators/document_validators.dart';
 
-class DocumentoFormPage extends StatefulWidget {
+class DocumentFormPage extends StatefulWidget {
   /// Si se pasa un documento existente, se usará para edición
-  final DocumentoModel? documento;
-
-  /// Tipos que el usuario ya tiene subidos (para restringir duplicados al crear)
+  final DocumentModel? document;
+  
+  /// Conjunto de tipos de documentos que ya existen
   final Set<TipoDocumento> tiposExistentes;
 
-  const DocumentoFormPage({
+  const DocumentFormPage({
     super.key,
-    this.documento,
+    this.document,
     this.tiposExistentes = const {},
   });
 
   @override
-  State<DocumentoFormPage> createState() => _DocumentoFormPageState();
+  State<DocumentFormPage> createState() => _DocumentFormPageState();
 }
 
-class _DocumentoFormPageState extends State<DocumentoFormPage> {
+class _DocumentFormPageState extends State<DocumentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _urlController = TextEditingController();
-  final _documentoService = DocumentoService();
+  final _documentoService = DocumentService();
   final _authService = AuthService();
 
-  late TipoDocumento _tipoSeleccionado;
+  TipoDocumento _tipoSeleccionado = TipoDocumento.hojaDeVida;
   bool _isLoading = false;
   String? _errorMessage;
 
-  bool get _isEditing => widget.documento != null;
+  bool get _isEditing => widget.document != null;
 
   @override
   void initState() {
     super.initState();
     if (_isEditing) {
-      _nombreController.text = widget.documento!.nombre;
-      _urlController.text = widget.documento!.url;
-      _tipoSeleccionado = widget.documento!.tipo;
-    } else {
-      final disponibles = TipoDocumento.values
-          .where((t) => !widget.tiposExistentes.contains(t))
-          .toList();
-      _tipoSeleccionado = disponibles.isNotEmpty
-          ? disponibles.first
-          : TipoDocumento.hojaDeVida;
+      _nombreController.text = widget.document!.nombre;
+      _urlController.text = widget.document!.url;
+      _tipoSeleccionado = widget.document!.tipo;
     }
   }
 
@@ -68,7 +61,7 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
 
     try {
       if (_isEditing) {
-        final actualizado = widget.documento!.copyWith(
+        final actualizado = widget.document!.copyWith(
           nombre: _nombreController.text.trim(),
           tipo: _tipoSeleccionado,
           url: _urlController.text.trim(),
@@ -87,11 +80,9 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              _isEditing
-                  ? 'Documento actualizado correctamente'
-                  : 'Documento creado correctamente',
-            ),
+            content: Text(_isEditing
+                ? 'Documento actualizado correctamente'
+                : 'Documento creado correctamente'),
           ),
         );
         Navigator.of(context).pop();
@@ -161,22 +152,20 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
 
               // Tipo de documento
               DropdownButtonFormField<TipoDocumento>(
-                value: _tipoSeleccionado,
+                initialValue: _tipoSeleccionado,
                 decoration: const InputDecoration(
                   labelText: 'Tipo de documento',
                   prefixIcon: Icon(Icons.category),
                 ),
                 items: TipoDocumento.values
-                    .where(
-                      (tipo) =>
-                          _isEditing || !widget.tiposExistentes.contains(tipo),
-                    )
-                    .map(
-                      (tipo) => DropdownMenuItem(
-                        value: tipo,
-                        child: Text(tipo.label),
-                      ),
-                    )
+                    .where((tipo) =>
+                        !widget.tiposExistentes.contains(tipo) ||
+                        (_isEditing &&
+                            widget.document!.tipo == tipo))
+                    .map((tipo) => DropdownMenuItem(
+                          value: tipo,
+                          child: Text(tipo.label),
+                        ))
                     .toList(),
                 onChanged: (value) {
                   if (value != null) {
@@ -191,21 +180,10 @@ class _DocumentoFormPageState extends State<DocumentoFormPage> {
               // URL del documento
               TextFormField(
                 controller: _urlController,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'URL del documento',
                   hintText: 'https://drive.google.com/...',
-                  prefixIcon: const Icon(Icons.link),
-                  suffixIcon: _urlController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          tooltip: 'Limpiar',
-                          onPressed: () {
-                            _urlController.clear();
-                            setState(() {});
-                          },
-                        )
-                      : null,
+                  prefixIcon: Icon(Icons.link),
                 ),
                 validator: DocumentoValidators.validateUrl,
                 keyboardType: TextInputType.url,

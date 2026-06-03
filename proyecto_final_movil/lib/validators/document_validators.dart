@@ -1,4 +1,4 @@
-import '../models/documento_model.dart';
+import '../models/document_model.dart';
 
 class DocumentoValidators {
   /// Valida el nombre del documento

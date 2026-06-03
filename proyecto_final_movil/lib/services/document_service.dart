@@ -1,21 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/documento_model.dart';
+import '../models/document_model.dart';
 
-class DocumentoService {
-  static final DocumentoService _instance = DocumentoService._internal();
+class DocumentService {
+  static final DocumentService _instance = DocumentService._internal();
 
-  factory DocumentoService() {
+  factory DocumentService() {
     return _instance;
   }
 
-  DocumentoService._internal();
+  DocumentService._internal();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   static const String _collection = 'documentos';
 
   /// Crea un nuevo documento en Firestore
-  Future<DocumentoModel> crearDocumento({
+  Future<DocumentModel> crearDocumento({
     required String nombre,
     required TipoDocumento tipo,
     required String url,
@@ -24,7 +24,7 @@ class DocumentoService {
     try {
       final docRef = _firestore.collection(_collection).doc();
 
-      final documento = DocumentoModel(
+      final documento = DocumentModel(
         id: docRef.id,
         nombre: nombre,
         tipo: tipo,
@@ -42,11 +42,11 @@ class DocumentoService {
   }
 
   /// Obtiene un documento por ID
-  Future<DocumentoModel?> getDocumentoPorId(String id) async {
+  Future<DocumentModel?> getDocumentoPorId(String id) async {
     try {
       final doc = await _firestore.collection(_collection).doc(id).get();
       if (doc.exists) {
-        return DocumentoModel.fromMap(doc.data() as Map<String, dynamic>);
+        return DocumentModel.fromMap(doc.data() as Map<String, dynamic>);
       }
       return null;
     } catch (e) {
@@ -56,7 +56,7 @@ class DocumentoService {
   }
 
   /// Obtiene todos los documentos de un usuario
-  Future<List<DocumentoModel>> getDocumentosPorUsuario(String usuarioId) async {
+  Future<List<DocumentModel>> getDocumentosPorUsuario(String usuarioId) async {
     try {
       final query = await _firestore
           .collection(_collection)
@@ -64,7 +64,7 @@ class DocumentoService {
           .get();
 
       final lista = query.docs
-          .map((doc) => DocumentoModel.fromMap(doc.data()))
+          .map((doc) => DocumentModel.fromMap(doc.data()))
           .toList();
       lista.sort((a, b) => b.fechaSubida.compareTo(a.fechaSubida));
       return lista;
@@ -75,14 +75,14 @@ class DocumentoService {
   }
 
   /// Stream que escucha los documentos de un usuario en tiempo real
-  Stream<List<DocumentoModel>> getDocumentosPorUsuarioStream(String usuarioId) {
+  Stream<List<DocumentModel>> getDocumentosPorUsuarioStream(String usuarioId) {
     return _firestore
         .collection(_collection)
         .where('usuarioId', isEqualTo: usuarioId)
         .snapshots()
         .map((snapshot) {
           final lista = snapshot.docs
-              .map((doc) => DocumentoModel.fromMap(doc.data()))
+              .map((doc) => DocumentModel.fromMap(doc.data()))
               .toList();
           lista.sort((a, b) => b.fechaSubida.compareTo(a.fechaSubida));
           return lista;
@@ -90,7 +90,7 @@ class DocumentoService {
   }
 
   /// Obtiene documentos de un usuario filtrados por tipo (ordenado en cliente)
-  Future<List<DocumentoModel>> getDocumentosPorTipo(
+  Future<List<DocumentModel>> getDocumentosPorTipo(
     String usuarioId,
     TipoDocumento tipo,
   ) async {
@@ -101,7 +101,7 @@ class DocumentoService {
           .get();
 
       final lista = query.docs
-          .map((doc) => DocumentoModel.fromMap(doc.data()))
+          .map((doc) => DocumentModel.fromMap(doc.data()))
           .where((doc) => doc.tipo == tipo)
           .toList();
       lista.sort((a, b) => b.fechaSubida.compareTo(a.fechaSubida));
@@ -113,7 +113,7 @@ class DocumentoService {
   }
 
   /// Actualiza los datos de un documento
-  Future<void> actualizarDocumento(DocumentoModel documento) async {
+  Future<void> actualizarDocumento(DocumentModel documento) async {
     try {
       await _firestore
           .collection(_collection)

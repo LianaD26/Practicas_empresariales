@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/documento_model.dart';
-import '../services/documento_service.dart';
+import '../models/document_model.dart';
+import '../services/document_service.dart';
 import '../services/auth_service.dart';
-import 'documento_form_page.dart';
+import 'document_form_page.dart';
 
-class DocumentoListPage extends StatelessWidget {
-  const DocumentoListPage({super.key});
+class DocumentListPage extends StatelessWidget {
+  const DocumentListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final documentoService = DocumentoService();
+    final documentoService = DocumentService();
     final authService = AuthService();
     final currentUser = authService.currentUser;
 
@@ -20,7 +20,7 @@ class DocumentoListPage extends StatelessWidget {
       );
     }
 
-    return StreamBuilder<List<DocumentoModel>>(
+    return StreamBuilder<List<DocumentModel>>(
       stream: documentoService.getDocumentosPorUsuarioStream(currentUser.uid),
       builder: (context, snapshot) {
         final documentos = snapshot.data ?? [];
@@ -42,7 +42,7 @@ class DocumentoListPage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                          DocumentoFormPage(tiposExistentes: tiposExistentes),
+                          DocumentFormPage(tiposExistentes: tiposExistentes),
                     ),
                   ),
                   tooltip: 'Agregar documento',
@@ -85,8 +85,8 @@ class DocumentoListPage extends StatelessWidget {
                       onEdit: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => DocumentoFormPage(
-                            documento: doc,
+                          builder: (_) => DocumentFormPage(
+                            document: doc,
                             tiposExistentes: tiposExistentes,
                           ),
                         ),
@@ -103,8 +103,8 @@ class DocumentoListPage extends StatelessWidget {
 
   Future<void> _confirmDelete(
     BuildContext context,
-    DocumentoModel doc,
-    DocumentoService service,
+    DocumentModel doc,
+    DocumentService service,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -145,7 +145,7 @@ class DocumentoListPage extends StatelessWidget {
 }
 
 class _DocumentoCard extends StatelessWidget {
-  final DocumentoModel documento;
+  final DocumentModel documento;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 

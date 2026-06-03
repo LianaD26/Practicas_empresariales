@@ -5,16 +5,16 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 
 /// Formulario para crear o editar una oferta de práctica (uso exclusivo de empresa)
-class OfertaFormPage extends StatefulWidget {
+class OfferFormPage extends StatefulWidget {
   final OfertaModel? oferta;
 
-  const OfertaFormPage({super.key, this.oferta});
+  const OfferFormPage({super.key, this.oferta});
 
   @override
-  State<OfertaFormPage> createState() => _OfertaFormPageState();
+  State<OfferFormPage> createState() => _OfferFormPageState();
 }
 
-class _OfertaFormPageState extends State<OfertaFormPage> {
+class _OfferFormPageState extends State<OfferFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _tituloController = TextEditingController();
   final _descripcionController = TextEditingController();

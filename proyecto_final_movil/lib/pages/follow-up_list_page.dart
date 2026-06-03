@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/seguimiento_model.dart';
-import '../services/seguimiento_service.dart';
-import 'seguimiento_form_page.dart';
+import '../models/follow-up_model.dart';
+import '../services/follow-up_service.dart';
+import 'follow-up_form_page.dart';
 
 class SeguimientoListPage extends StatelessWidget {
   final String postulacionId;

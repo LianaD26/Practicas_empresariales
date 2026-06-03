@@ -4,8 +4,8 @@ import '../models/postulacion_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
-import 'oferta_form_page.dart';
-import 'seguimiento_list_page.dart';
+import '../services/permission_service.dart';
+import 'offer_form_page.dart';
 
 /// Página principal para empresas
 /// Pueden crear/editar ofertas, ver postulaciones y preseleccionar candidatos
@@ -22,6 +22,13 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
   int _selectedIndex = 0;
+
+  static const _pageLabels = [
+    'Inicio',
+    'Mis Ofertas',
+    'Postulantes',
+    'Mi Perfil',
+  ];
 
   Future<void> _handleLogout() async {
     final confirmed = await showDialog<bool>(
@@ -59,12 +66,28 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inicio - Empresa'),
-        centerTitle: true,
         elevation: 0,
+        backgroundColor: Colors.orange,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.user.displayName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              _pageLabels[_selectedIndex],
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: _handleLogout,
             tooltip: 'Cerrar Sesión',
           ),
@@ -73,19 +96,32 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
       body: _buildBody(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => _selectedIndex = index),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.orange,
+        unselectedItemColor: Colors.grey,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Mis Ofertas'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.work_outline),
+            activeIcon: Icon(Icons.work),
+            label: 'Mis Ofertas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
             label: 'Postulantes',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Mi Perfil',
+          ),
         ],
       ),
     );
@@ -164,7 +200,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
             description: 'Publica una nueva oferta de práctica',
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const OfertaFormPage()),
+              MaterialPageRoute(builder: (_) => const OfferFormPage()),
             ),
           ),
           const SizedBox(height: 12),
@@ -204,7 +240,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const OfertaFormPage()),
+          MaterialPageRoute(builder: (_) => const OfferFormPage()),
         ),
         icon: const Icon(Icons.add),
         label: const Text('Nueva Oferta'),
@@ -248,14 +284,17 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
                 onEdit: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => OfertaFormPage(oferta: oferta),
+                    builder: (_) => OfferFormPage(oferta: oferta),
                   ),
                 ),
                 onDelete: () => _confirmDeleteOferta(oferta),
                 onVerPostulantes: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => _PostulantesOfertaPage(oferta: oferta),
+                    builder: (_) => _PostulantesOfertaPage(
+                      oferta: oferta,
+                      currentUser: widget.user,
+                    ),
                   ),
                 ),
               );
@@ -352,7 +391,10 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => _PostulantesOfertaPage(oferta: oferta),
+                    builder: (_) => _PostulantesOfertaPage(
+                      oferta: oferta,
+                      currentUser: widget.user,
+                    ),
                   ),
                 ),
               ),
@@ -611,8 +653,12 @@ class _OfertaCard extends StatelessWidget {
 // ─── PÁGINA: POSTULANTES DE UNA OFERTA ───────────────────────────────────────
 class _PostulantesOfertaPage extends StatelessWidget {
   final OfertaModel oferta;
+  final UserModel currentUser;
 
-  const _PostulantesOfertaPage({required this.oferta});
+  const _PostulantesOfertaPage({
+    required this.oferta,
+    required this.currentUser,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -654,6 +700,7 @@ class _PostulantesOfertaPage extends StatelessWidget {
               return _PostulanteCard(
                 postulacion: post,
                 firestoreService: firestoreService,
+                currentUser: currentUser,
               );
             },
           );
@@ -667,10 +714,12 @@ class _PostulantesOfertaPage extends StatelessWidget {
 class _PostulanteCard extends StatelessWidget {
   final PostulacionModel postulacion;
   final FirestoreService firestoreService;
+  final UserModel currentUser;
 
   const _PostulanteCard({
     required this.postulacion,
     required this.firestoreService,
+    required this.currentUser,
   });
 
   Color _estadoColor(PostulacionEstado estado) {
@@ -710,14 +759,19 @@ class _PostulanteCard extends StatelessWidget {
       context: context,
       builder: (_) => SimpleDialog(
         title: const Text('Cambiar estado'),
-        children: PostulacionEstado.values
-            .map(
-              (e) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, e),
-                child: Text(_estadoLabel(e)),
-              ),
-            )
-            .toList(),
+        children:
+            const [
+                  PostulacionEstado.preseleccionado,
+                  PostulacionEstado.aprobado,
+                  PostulacionEstado.rechazado,
+                ]
+                .map(
+                  (e) => SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, e),
+                    child: Text(_estadoLabel(e)),
+                  ),
+                )
+                .toList(),
       ),
     );
 
@@ -751,10 +805,23 @@ class _PostulanteCard extends StatelessWidget {
     }
 
     try {
+      // La empresa puede cambiar cualquier estado de la postulación
+      if (!currentUser.isActive) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tu cuenta debe estar activa para cambiar estados'),
+            ),
+          );
+        }
+        return;
+      }
+
       await firestoreService.updateApplicationStatus(
         post.id,
         nuevoEstado,
         motivo: motivo,
+        currentUser: currentUser,
       );
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -815,56 +882,21 @@ class _PostulanteCard extends StatelessWidget {
               },
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: color.withOpacity(0.5)),
-                  ),
-                  child: Text(
-                    _estadoLabel(postulacion.estado),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color.withOpacity(0.5)),
+              ),
+              child: Text(
+                _estadoLabel(postulacion.estado),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: color,
+                  fontWeight: FontWeight.w600,
                 ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => _cambiarEstado(context, postulacion),
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Estado'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.orange,
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                TextButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SeguimientoListPage(
-                        postulacionId: postulacion.id,
-                        readOnly: false,
-                      ),
-                    ),
-                  ),
-                  icon: const Icon(Icons.track_changes, size: 16),
-                  label: const Text('Seguimiento'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.deepPurple,
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ],
+              ),
             ),
             if (postulacion.estado == PostulacionEstado.rechazado &&
                 postulacion.motivoRechazo != null) ...[
@@ -874,6 +906,21 @@ class _PostulanteCard extends StatelessWidget {
                 style: const TextStyle(fontSize: 12, color: Colors.red),
               ),
             ],
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => _cambiarEstado(context, postulacion),
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Estado'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

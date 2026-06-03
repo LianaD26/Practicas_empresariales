@@ -304,7 +304,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ...users.map((user) => _buildUserCard(user)).toList(),
+            ...users.map((user) => _buildUserCard(user)),
           ],
         );
       },
