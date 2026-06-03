@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
-import '../models/oferta_model.dart';
-import '../models/postulacion_model.dart';
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
-import '../services/firestore_service.dart';
-import '../widgets/require_role.dart';
 import '../models/offer_model.dart';
 import '../models/postulation_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../widgets/require_role.dart';
 import 'offer_form_page.dart';
 import 'follow-up_list_page.dart';
 
@@ -29,6 +24,12 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
   int _selectedIndex = 0;
+  static const _pageLabels = [
+    'Inicio',
+    'Mis Ofertas',
+    'Postulantes',
+    'Mi Perfil',
+  ];
 
   Future<void> _handleLogout() async {
     final confirmed = await showDialog<bool>(
