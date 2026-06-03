@@ -414,7 +414,7 @@ class FirestoreService {
   }
 
   /// Actualiza el estado de una postulación.
-  /// REGLA 4: Valida que solo coordinador puede cambiar estado
+  /// Solo la empresa puede cambiar el estado de las postulaciones a sus ofertas
   /// REGLA 6: Si [estado] es [PostulacionEstado.rechazado], [motivo] es obligatorio.
   Future<void> updateApplicationStatus(
     String applicationId,
@@ -424,12 +424,16 @@ class FirestoreService {
   }) async {
     final permissionService = PermissionService();
 
-    // REGLA 4: Validar que solo coordinador puede cambiar estado
-    if (currentUser != null &&
-        !permissionService.canModifyApplicationStatus(currentUser)) {
-      throw ArgumentError(
-        'Solo coordinadores pueden cambiar el estado de postulaciones',
-      );
+    // Validar que la empresa tiene permiso para cambiar estado
+    if (currentUser != null) {
+      if (currentUser.role != UserRoles.company) {
+        throw ArgumentError(
+          'Solo las empresas pueden cambiar el estado de postulaciones',
+        );
+      }
+      if (!currentUser.isActive) {
+        throw ArgumentError('Tu cuenta debe estar activa para cambiar estados');
+      }
     }
 
     // REGLA 6: Aplica validación de motivo para rechazo
