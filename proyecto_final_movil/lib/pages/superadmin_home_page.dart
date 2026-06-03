@@ -4,7 +4,7 @@ import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
 /// Página principal para Super Administrador
-/// Puede cambiar roles y estados de usuarios
+/// Puede cambiar estados de usuarios
 class SuperAdminHomePage extends StatefulWidget {
   final UserModel user;
 
@@ -282,43 +282,6 @@ class _SuperAdminHomePageState extends State<SuperAdminHomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Divider(),
-                const SizedBox(height: 12),
-                const Text('Cambiar Rol:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildRoleButton(
-                        label: 'Estudiante',
-                        role: 'student',
-                        isSelected: user.role == 'student',
-                        onPressed: () => _updateUserRole(user.uid, 'student'),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildRoleButton(
-                        label: 'Empresa',
-                        role: 'company',
-                        isSelected: user.role == 'company',
-                        onPressed: () => _updateUserRole(user.uid, 'company'),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildRoleButton(
-                        label: 'Coordinador',
-                        role: 'coordinator',
-                        isSelected: user.role == 'coordinator',
-                        onPressed: () => _updateUserRole(user.uid, 'coordinator'),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildRoleButton(
-                        label: 'Super Admin',
-                        role: 'superadmin',
-                        isSelected: user.role == 'superadmin',
-                        onPressed: () => _updateUserRole(user.uid, 'superadmin'),
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 16),
                 const Text('Cambiar Estado:', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),

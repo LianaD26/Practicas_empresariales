@@ -78,6 +78,9 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
             _selectedIndex = index;
           });
         },
+        selectedItemColor: Colors.orange,
+        unselectedItemColor: const Color.fromARGB(255, 114, 68, 0),
+        backgroundColor: Colors.white,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Mis Ofertas'),
