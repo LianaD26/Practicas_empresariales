@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
-import '../models/empresa_model.dart';
+import '../models/company_model.dart';
 import '../models/oferta_model.dart';
 import '../models/postulacion_model.dart';
 import '../core/constants.dart';
@@ -498,3 +498,4 @@ class FirestoreService {
     }
   }
 }
+
