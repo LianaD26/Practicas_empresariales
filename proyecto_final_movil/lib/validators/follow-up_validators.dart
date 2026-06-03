@@ -1,4 +1,4 @@
-import '../models/seguimiento_model.dart';
+import '../models/follow-up_model.dart';
 
 class SeguimientoValidators {
   /// Valida el comentario del seguimiento

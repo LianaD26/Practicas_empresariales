@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/seguimiento_model.dart';
+import '../models/follow-up_model.dart';
 import '../services/follow-up_service.dart';
 import '../validators/follow-up_validators.dart';
 
@@ -145,7 +145,7 @@ class _SeguimientoFormPageState extends State<SeguimientoFormPage> {
 
               // Estado
               DropdownButtonFormField<EstadoSeguimiento>(
-                initialValue: _estadoSeleccionado,
+                value: _estadoSeleccionado,
                 decoration: const InputDecoration(
                   labelText: 'Estado',
                   prefixIcon: Icon(Icons.flag_outlined),

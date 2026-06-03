@@ -1,6 +1,6 @@
 import '../models/user_model.dart';
-import '../models/oferta_model.dart';
-import '../models/postulacion_model.dart';
+import '../models/offer_model.dart';
+import '../models/postulation_model.dart';
 import '../core/constants.dart';
 
 /// Servicio que centraliza la lógica de permisos y autorización

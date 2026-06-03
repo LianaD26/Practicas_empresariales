@@ -10,7 +10,7 @@
 * Gestionar todos los tipos de usuarios, sea para cambiar su estado o para conocer cuáles están registrados
 
 -- Empresa:
-* Crear ofertas
+* Crear ofertas para que los estudiantes puedan aplicar
 
 
 # Funcionalidades pendientes:
@@ -27,7 +27,8 @@
 -- Estudiante:
 * Cargar documentos sin formato o contenido válido
 
-
+-- Empresa:
+* Crear una oferta con una ubicación inválida
 
 
 # Lista para entrega?

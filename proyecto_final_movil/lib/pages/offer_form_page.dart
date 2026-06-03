@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../models/oferta_model.dart';
+import '../models/offer_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 
