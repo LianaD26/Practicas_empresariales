@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../repositories/user_repository.dart';
 import '../validators/auth_validators.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -53,6 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (mounted) {
         if (user != null) {
+          await context.read<UserRepository>().createOrUpdateUser(user);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Registro exitoso')),
           );

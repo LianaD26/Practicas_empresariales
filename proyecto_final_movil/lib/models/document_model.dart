@@ -1,3 +1,5 @@
+import '../core/map_parsers.dart';
+
 /// Tipos válidos de documento
 enum TipoDocumento {
   cartaDePresentacion('carta_de_presentacion', 'Carta de Presentación'),
@@ -53,11 +55,7 @@ class DocumentModel {
       nombre: map['nombre'] ?? '',
       tipo: TipoDocumento.fromValue(map['tipo'] ?? 'hoja_de_vida'),
       url: map['url'] ?? '',
-      fechaSubida: map['fechaSubida'] != null
-          ? DateTime.parse(map['fechaSubida'] is String
-              ? map['fechaSubida']
-              : map['fechaSubida'].toDate().toIso8601String())
-          : DateTime.now(),
+      fechaSubida: parseMapDateTime(map['fechaSubida']),
       usuarioId: map['usuarioId'] ?? '',
     );
   }

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart'; // Incluye UserStatus enum
+import '../repositories/user_repository.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -74,6 +75,7 @@ class AuthService {
     required String password,
     required String displayName,
     String role = 'student',
+    UserRepository? userRepository,
   }) async {
     try {
       final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
@@ -97,6 +99,9 @@ class AuthService {
         );
 
         await _firestore.collection('users').doc(user.uid).set(userModel.toMap());
+        if (userRepository != null) {
+          await userRepository.createOrUpdateUser(userModel);
+        }
 
         return userModel;
       }
@@ -111,6 +116,7 @@ class AuthService {
   Future<UserModel?> signIn({
     required String email,
     required String password,
+    UserRepository? userRepository,
   }) async {
     try {
       final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
@@ -120,9 +126,25 @@ class AuthService {
 
       final user = userCredential.user;
       if (user != null) {
-        // Obtener datos de usuario desde Firestore
-        final userModel = await getUserById(user.uid);
-        return userModel;
+        UserModel? userModel;
+        try {
+          userModel = await getUserById(user.uid);
+        } catch (e) {
+          print('Firestore no disponible al iniciar sesión: $e');
+        }
+
+        if (userModel != null && userRepository != null) {
+          await userRepository.createOrUpdateUser(userModel);
+          return userModel;
+        }
+
+        if (userRepository != null) {
+          final localUser = await userRepository.getUserById(user.uid);
+          if (localUser != null) {
+            return localUser;
+          }
+        }
+        return null;
       }
       return null;
     } on FirebaseAuthException catch (e) {

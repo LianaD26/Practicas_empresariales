@@ -1,3 +1,5 @@
+import '../core/map_parsers.dart';
+
 /// Modelo de Empresa
 class EmpresaModel {
   final String id;
@@ -42,16 +44,8 @@ class EmpresaModel {
       descripcion: map['descripcion'],
       ubicacion: map['ubicacion'],
       contacto: map['contacto'],
-      createdAt: map['createdAt'] != null
-          ? (map['createdAt'] is DateTime
-              ? map['createdAt']
-              : DateTime.parse(map['createdAt'].toDate().toString()))
-          : DateTime.now(),
-      updatedAt: map['updatedAt'] != null
-          ? (map['updatedAt'] is DateTime
-              ? map['updatedAt']
-              : DateTime.parse(map['updatedAt'].toDate().toString()))
-          : null,
+      createdAt: parseMapDateTime(map['createdAt']),
+      updatedAt: parseMapDateTimeNullable(map['updatedAt']),
       isActive: map['isActive'] ?? true,
     );
   }

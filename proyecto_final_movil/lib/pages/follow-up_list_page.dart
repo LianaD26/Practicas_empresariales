@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/follow-up_model.dart';
-import '../services/follow-up_service.dart';
+import '../repositories/follow_up_repository.dart';
 import 'follow-up_form_page.dart';
 
 class SeguimientoListPage extends StatelessWidget {
@@ -17,7 +18,6 @@ class SeguimientoListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final seguimientoService = SeguimientoService();
 
     return Scaffold(
       appBar: AppBar(
@@ -39,7 +39,7 @@ class SeguimientoListPage extends StatelessWidget {
               child: const Icon(Icons.add),
             ),
       body: StreamBuilder<List<SeguimientoModel>>(
-        stream: seguimientoService.getSeguimientosPorPostulacionStream(
+        stream: context.read<FollowUpRepository>().watchSeguimientosPorPostulacion(
           postulacionId,
         ),
         builder: (context, snapshot) {
@@ -101,7 +101,7 @@ class SeguimientoListPage extends StatelessWidget {
                       ),
                 onDelete: readOnly
                     ? () {}
-                    : () => _confirmDelete(context, seg, seguimientoService),
+                    : () => _confirmDelete(context, seg),
               );
             },
           );
@@ -113,7 +113,6 @@ class SeguimientoListPage extends StatelessWidget {
   Future<void> _confirmDelete(
     BuildContext context,
     SeguimientoModel seg,
-    SeguimientoService service,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -136,7 +135,7 @@ class SeguimientoListPage extends StatelessWidget {
 
     if (confirmed ?? false) {
       try {
-        await service.eliminarSeguimiento(seg.id);
+        await context.read<FollowUpRepository>().eliminarSeguimiento(seg.id);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Seguimiento eliminado')),

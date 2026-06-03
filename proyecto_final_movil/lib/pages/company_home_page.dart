@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../models/offer_model.dart';
 import '../models/postulation_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
-import '../services/firestore_service.dart';
 import '../widgets/require_role.dart';
+import '../repositories/user_repository.dart';
+import '../repositories/offer_repository.dart';
+import '../repositories/postulation_repository.dart';
 import 'offer_form_page.dart';
 import 'follow-up_list_page.dart';
 
@@ -22,7 +25,6 @@ class CompanyHomePage extends StatefulWidget {
 
 class _CompanyHomePageState extends State<CompanyHomePage> {
   final AuthService _authService = AuthService();
-  final FirestoreService _firestoreService = FirestoreService();
   int _selectedIndex = 0;
   static const _pageLabels = [
     'Inicio',
@@ -89,6 +91,13 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: _handleLogout,
+              tooltip: 'Cerrar Sesión',
+            ),
+          ],
         ),
         body: _buildBody(),
       bottomNavigationBar: BottomNavigationBar(
@@ -235,7 +244,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
         backgroundColor: Colors.orange,
       ),
       body: StreamBuilder<List<OfertaModel>>(
-        stream: _firestoreService.getOfertasByCompanyStream(companyId),
+        stream: context.read<OfferRepository>().watchOffersByCompany(companyId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -268,7 +277,6 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
               final oferta = ofertas[i];
               return _OfertaCard(
                 oferta: oferta,
-                firestoreService: _firestoreService,
                 onEdit: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -313,7 +321,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
     );
     if (confirmed ?? false) {
       try {
-        await _firestoreService.deleteOferta(oferta.id);
+        await context.read<OfferRepository>().deleteOferta(oferta.id);
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -334,7 +342,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
     final companyId = widget.user.uid;
 
     return StreamBuilder<List<OfertaModel>>(
-      stream: _firestoreService.getOfertasByCompanyStream(companyId),
+      stream: context.read<OfferRepository>().watchOffersByCompany(companyId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -502,14 +510,12 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
 // ─── TARJETA DE OFERTA ────────────────────────────────────────────────────────
 class _OfertaCard extends StatelessWidget {
   final OfertaModel oferta;
-  final FirestoreService firestoreService;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onVerPostulantes;
 
   const _OfertaCard({
     required this.oferta,
-    required this.firestoreService,
     required this.onEdit,
     required this.onDelete,
     required this.onVerPostulantes,
@@ -640,8 +646,6 @@ class _PostulantesOfertaPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firestoreService = FirestoreService();
-
     return Scaffold(
       appBar: AppBar(
         title: Text(oferta.titulo, overflow: TextOverflow.ellipsis),
@@ -649,7 +653,7 @@ class _PostulantesOfertaPage extends StatelessWidget {
         elevation: 0,
       ),
       body: StreamBuilder<List<PostulacionModel>>(
-        stream: firestoreService.getApplicationsByOfferStream(oferta.id),
+        stream: context.read<PostulationRepository>().watchApplicationsByOffer(oferta.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -677,7 +681,6 @@ class _PostulantesOfertaPage extends StatelessWidget {
               final post = postulaciones[i];
               return _PostulanteCard(
                 postulacion: post,
-                firestoreService: firestoreService,
               );
             },
           );
@@ -690,11 +693,9 @@ class _PostulantesOfertaPage extends StatelessWidget {
 // ─── TARJETA DE POSTULANTE (empresa gestiona estado + seguimiento) ────────────
 class _PostulanteCard extends StatelessWidget {
   final PostulacionModel postulacion;
-  final FirestoreService firestoreService;
 
   const _PostulanteCard({
     required this.postulacion,
-    required this.firestoreService,
   });
 
   Color _estadoColor(PostulacionEstado estado) {
@@ -775,7 +776,7 @@ class _PostulanteCard extends StatelessWidget {
     }
 
     try {
-      await firestoreService.updateApplicationStatus(
+      await context.read<PostulationRepository>().updateApplicationStatus(
         post.id,
         nuevoEstado,
         motivo: motivo,
@@ -806,7 +807,7 @@ class _PostulanteCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FutureBuilder<UserModel?>(
-              future: firestoreService.getUserById(postulacion.studentId),
+              future: context.read<UserRepository>().getUserById(postulacion.studentId),
               builder: (context, snap) {
                 final user = snap.data;
                 return Row(

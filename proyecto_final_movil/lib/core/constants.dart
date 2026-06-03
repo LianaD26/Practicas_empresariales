@@ -44,8 +44,10 @@ class AppStates {
   static const String applicationStateRejected = 'rechazado';
 
   // Estados de sincronización (offline-first)
-  static const String syncStatusPending = 'pending';
+  static const String syncStatusPendingSync = 'pendingSync';
   static const String syncStatusSynced = 'synced';
+
+  static const String syncPendingLabel = 'Pendiente de sincronización';
 }
 
 /// Firestore collections

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/document_model.dart';
-import '../services/document_service.dart';
+import '../repositories/document_repository.dart';
 import '../services/auth_service.dart';
 import '../validators/document_validators.dart';
 
@@ -25,7 +26,6 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _urlController = TextEditingController();
-  final _documentoService = DocumentService();
   final _authService = AuthService();
 
   TipoDocumento _tipoSeleccionado = TipoDocumento.hojaDeVida;
@@ -66,10 +66,10 @@ class _DocumentFormPageState extends State<DocumentFormPage> {
           tipo: _tipoSeleccionado,
           url: _urlController.text.trim(),
         );
-        await _documentoService.actualizarDocumento(actualizado);
+        await context.read<DocumentRepository>().actualizarDocumento(actualizado);
       } else {
         final usuarioId = _authService.currentUser?.uid ?? '';
-        await _documentoService.crearDocumento(
+        await context.read<DocumentRepository>().crearDocumento(
           nombre: _nombreController.text.trim(),
           tipo: _tipoSeleccionado,
           url: _urlController.text.trim(),

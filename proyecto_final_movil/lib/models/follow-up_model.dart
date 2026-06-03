@@ -1,3 +1,5 @@
+import '../core/map_parsers.dart';
+
 /// Estados válidos de un seguimiento
 enum EstadoSeguimiento {
   pendiente('pendiente', 'Pendiente'),
@@ -49,11 +51,7 @@ class SeguimientoModel {
   factory SeguimientoModel.fromMap(Map<String, dynamic> map) {
     return SeguimientoModel(
       id: map['id'] ?? '',
-      fecha: map['fecha'] != null
-          ? DateTime.parse(map['fecha'] is String
-              ? map['fecha']
-              : map['fecha'].toDate().toIso8601String())
-          : DateTime.now(),
+      fecha: parseMapDateTime(map['fecha']),
       comentario: map['comentario'] ?? '',
       estado: EstadoSeguimiento.fromValue(map['estado'] ?? 'pendiente'),
       postulacionId: map['postulacionId'] ?? '',

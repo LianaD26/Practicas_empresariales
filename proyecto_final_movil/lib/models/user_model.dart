@@ -1,3 +1,5 @@
+import '../core/map_parsers.dart';
+
 /// Estados posibles de una cuenta de usuario
 enum UserStatus { pendingApproval, active, blocked }
 
@@ -51,11 +53,7 @@ class UserModel {
       displayName: map['displayName'] ?? map['name'] ?? '',
       role: map['role'] ?? 'student',
       status: statusEnum,
-      createdAt: map['createdAt'] != null
-          ? (map['createdAt'] is DateTime
-              ? map['createdAt']
-              : DateTime.parse(map['createdAt'].toDate().toString()))
-          : DateTime.now(),
+      createdAt: parseMapDateTime(map['createdAt']),
     );
   }
 

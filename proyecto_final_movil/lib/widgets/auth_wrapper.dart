@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import '../pages/login_page.dart';
 import '../pages/home_page.dart';
 import '../pages/blocked_page.dart';
 import '../pages/pending_approval_page.dart';
+import '../repositories/user_repository.dart';
 
 /// Widget que maneja la lógica de autenticación, redirección por rol y estado
 /// - Si no hay usuario autenticado: muestra LoginPage
@@ -22,8 +25,10 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder(
       stream: _authService.authStateChanges,
       builder: (context, authSnapshot) {
+        final User? currentAuthUser = authSnapshot.data ?? FirebaseAuth.instance.currentUser;
+
         // Mientras se verifica el estado de autenticación
-        if (authSnapshot.connectionState == ConnectionState.waiting) {
+        if (authSnapshot.connectionState == ConnectionState.waiting && currentAuthUser == null) {
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
@@ -41,13 +46,15 @@ class AuthWrapper extends StatelessWidget {
         }
 
         // Si el usuario NO está autenticado
-        if (!authSnapshot.hasData || authSnapshot.data == null) {
+        if (currentAuthUser == null) {
           return const LoginPage();
         }
 
-        // Si el usuario está autenticado, obtener su perfil de Firestore
+        final uid = currentAuthUser.uid;
+
+        // Si el usuario está autenticado, obtener su perfil de Drift (offline-first)
         return StreamBuilder<UserModel?>(
-          stream: _authService.getCurrentUserModelStream(),
+          stream: context.read<UserRepository>().getUserStream(uid),
           builder: (context, userSnapshot) {
             // Mientras se cargan datos del usuario
             if (userSnapshot.connectionState == ConnectionState.waiting) {

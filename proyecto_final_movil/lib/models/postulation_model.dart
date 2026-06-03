@@ -1,3 +1,6 @@
+import '../core/constants.dart';
+import '../core/map_parsers.dart';
+
 /// Estados posibles de una postulación
 enum PostulacionEstado { postulado, preseleccionado, aprobado, rechazado }
 
@@ -10,7 +13,7 @@ class PostulacionModel {
   final String? motivoRechazo; // Obligatorio si estado es rechazado
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final String? syncStatus; // Para offline-first: 'pending', 'synced'
+  final String? syncStatus; // offline-first: 'pendingSync', 'synced'
 
   PostulacionModel({
     required this.id,
@@ -58,16 +61,8 @@ class PostulacionModel {
       studentId: map['studentId'] ?? '',
       estado: estadoEnum,
       motivoRechazo: map['motivoRechazo'],
-      createdAt: map['createdAt'] != null
-          ? (map['createdAt'] is DateTime
-              ? map['createdAt']
-              : DateTime.parse(map['createdAt'].toDate().toString()))
-          : DateTime.now(),
-      updatedAt: map['updatedAt'] != null
-          ? (map['updatedAt'] is DateTime
-              ? map['updatedAt']
-              : DateTime.parse(map['updatedAt'].toDate().toString()))
-          : null,
+      createdAt: parseMapDateTime(map['createdAt']),
+      updatedAt: parseMapDateTimeNullable(map['updatedAt']),
       syncStatus: map['syncStatus'] ?? 'synced',
     );
   }
@@ -104,6 +99,10 @@ class PostulacionModel {
   /// Verifica si está preseleccionada
   bool get estaPreseleccionada => estado == PostulacionEstado.preseleccionado;
 
-  /// Verifica si necesita sincronización
-  bool get necesitaSincronizacion => syncStatus == 'pending';
+  /// Verifica si necesita sincronización (pendingSync o valor legado pending)
+  bool get necesitaSincronizacion =>
+      syncStatus == AppStates.syncStatusPendingSync || syncStatus == 'pending';
+
+  String get etiquetaSincronizacion =>
+      necesitaSincronizacion ? AppStates.syncPendingLabel : '';
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../models/document_model.dart';
-import '../services/document_service.dart';
+import '../repositories/document_repository.dart';
 import '../services/auth_service.dart';
 import 'document_form_page.dart';
 
@@ -10,7 +11,6 @@ class DocumentListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final documentoService = DocumentService();
     final authService = AuthService();
     final currentUser = authService.currentUser;
 
@@ -21,7 +21,7 @@ class DocumentListPage extends StatelessWidget {
     }
 
     return StreamBuilder<List<DocumentModel>>(
-      stream: documentoService.getDocumentosPorUsuarioStream(currentUser.uid),
+      stream: context.read<DocumentRepository>().watchDocumentosPorUsuario(currentUser.uid),
       builder: (context, snapshot) {
         final documentos = snapshot.data ?? [];
         final tiposExistentes = documentos.map((d) => d.tipo).toSet();
@@ -92,7 +92,7 @@ class DocumentListPage extends StatelessWidget {
                         ),
                       ),
                       onDelete: () =>
-                          _confirmDelete(context, doc, documentoService),
+                          _confirmDelete(context, doc),
                     );
                   },
                 ),
@@ -104,7 +104,6 @@ class DocumentListPage extends StatelessWidget {
   Future<void> _confirmDelete(
     BuildContext context,
     DocumentModel doc,
-    DocumentService service,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -127,7 +126,7 @@ class DocumentListPage extends StatelessWidget {
 
     if (confirmed ?? false) {
       try {
-        await service.eliminarDocumento(doc.id);
+        await context.read<DocumentRepository>().eliminarDocumento(doc.id);
         if (context.mounted) {
           ScaffoldMessenger.of(
             context,

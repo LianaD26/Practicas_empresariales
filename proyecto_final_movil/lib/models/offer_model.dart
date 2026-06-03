@@ -1,3 +1,5 @@
+import '../core/map_parsers.dart';
+
 /// Estados posibles de una oferta de práctica
 enum OfertaEstado { borrador, publicada, cerrado }
 
@@ -70,25 +72,16 @@ class OfertaModel {
       descripcion: map['descripcion'] ?? '',
       empresaId: map['empresaId'] ?? '',
       estado: estadoEnum,
-      fechaLimite: map['fechaLimite'] != null
-          ? (map['fechaLimite'] is DateTime
-              ? map['fechaLimite']
-              : DateTime.parse(map['fechaLimite'].toDate().toString()))
-          : DateTime.now().add(const Duration(days: 30)),
+      fechaLimite: parseMapDateTime(
+        map['fechaLimite'],
+        defaultValue: DateTime.now().add(const Duration(days: 30)),
+      ),
       vacantes: map['vacantes'] ?? 1,
       ubicacion: map['ubicacion'],
       areaPractica: map['areaPractica'],
       requisitos: map['requisitos'],
-      createdAt: map['createdAt'] != null
-          ? (map['createdAt'] is DateTime
-              ? map['createdAt']
-              : DateTime.parse(map['createdAt'].toDate().toString()))
-          : DateTime.now(),
-      updatedAt: map['updatedAt'] != null
-          ? (map['updatedAt'] is DateTime
-              ? map['updatedAt']
-              : DateTime.parse(map['updatedAt'].toDate().toString()))
-          : null,
+      createdAt: parseMapDateTime(map['createdAt']),
+      updatedAt: parseMapDateTimeNullable(map['updatedAt']),
     );
   }
 

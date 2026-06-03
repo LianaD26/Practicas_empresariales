@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/offer_model.dart';
 import '../services/auth_service.dart';
-import '../services/firestore_service.dart';
+import '../repositories/offer_repository.dart';
 
 /// Formulario para crear o editar una oferta de práctica (uso exclusivo de empresa)
 class OfferFormPage extends StatefulWidget {
@@ -23,7 +24,6 @@ class _OfferFormPageState extends State<OfferFormPage> {
   final _requisitosController = TextEditingController();
   final _vacantesController = TextEditingController(text: '1');
 
-  final _firestoreService = FirestoreService();
   final _authService = AuthService();
 
   OfertaEstado _estadoSeleccionado = OfertaEstado.publicada;
@@ -129,7 +129,7 @@ class _OfferFormPageState extends State<OfferFormPage> {
         );
       }
 
-      await _firestoreService.createOrUpdateOferta(oferta);
+      await context.read<OfferRepository>().createOrUpdateOferta(oferta);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

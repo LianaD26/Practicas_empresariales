@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../widgets/require_role.dart';
+import '../repositories/user_repository.dart';
 
 /// Página principal para Super Administrador
 /// Puede cambiar estados de usuarios
@@ -215,14 +216,14 @@ class _SuperAdminHomePageState extends State<SuperAdminHomePage> {
   }
 
   Widget _buildManageUsersTab() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+    return StreamBuilder<List<UserModel>>(
+      stream: context.read<UserRepository>().getAllUsersStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -241,9 +242,7 @@ class _SuperAdminHomePageState extends State<SuperAdminHomePage> {
           );
         }
 
-        final users = snapshot.data!.docs
-            .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
-            .toList();
+        final users = snapshot.data!;
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -333,21 +332,6 @@ class _SuperAdminHomePageState extends State<SuperAdminHomePage> {
     );
   }
 
-  Widget _buildRoleButton({
-    required String label,
-    required String role,
-    required bool isSelected,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.deepPurple : Colors.grey.shade300,
-        foregroundColor: isSelected ? Colors.white : Colors.black,
-      ),
-      child: Text(label),
-    );
-  }
 
   Widget _buildStatusButton({
     required String label,
@@ -441,26 +425,9 @@ class _SuperAdminHomePageState extends State<SuperAdminHomePage> {
     );
   }
 
-  Future<void> _updateUserRole(String uid, String newRole) async {
-    try {
-      await _authService.updateUserRole(uid, newRole);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Rol actualizado a $newRole')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
   Future<void> _updateUserStatus(String uid, UserStatus status) async {
     try {
-      await _authService.updateUserStatus(uid, status);
+      await context.read<UserRepository>().updateUserStatus(uid, status);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Estado actualizado a ${status.toString().split('.').last}')),

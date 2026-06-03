@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../widgets/require_role.dart';
+import '../repositories/user_repository.dart';
 
 /// Página principal para coordinadores
 /// Pueden aprobar/rechazar postulaciones, gestionar usuarios y ver todo
@@ -272,14 +273,14 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
   }
 
   Widget _buildUsersTab() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+    return StreamBuilder<List<UserModel>>(
+      stream: context.read<UserRepository>().getAllUsersStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -298,9 +299,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
           );
         }
 
-        final users = snapshot.data!.docs
-            .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
-            .toList();
+        final users = snapshot.data!;
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -403,7 +402,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
 
   Future<void> _updateUserStatus(String uid, UserStatus status) async {
     try {
-      await _authService.updateUserStatus(uid, status);
+      await context.read<UserRepository>().updateUserStatus(uid, status);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Estado actualizado a ${status.toString().split('.').last}')),

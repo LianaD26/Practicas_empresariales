@@ -1,14 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../widgets/require_role.dart';
 import '../models/offer_model.dart';
 import '../models/postulation_model.dart';
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
-import '../services/firestore_service.dart';
+import '../repositories/offer_repository.dart';
+import '../repositories/postulation_repository.dart';
 import 'document_list_page.dart';
 import 'follow-up_list_page.dart';
 
@@ -25,7 +25,6 @@ class StudentHomePage extends StatefulWidget {
 
 class _StudentHomePageState extends State<StudentHomePage> {
   final AuthService _authService = AuthService();
-  final FirestoreService _firestoreService = FirestoreService();
   int _selectedIndex = 0;
   OfertaModel? _selectedOffer;
   final TextEditingController _searchController = TextEditingController();
@@ -139,7 +138,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
     if (studentId.isEmpty) return;
 
     try {
-      final alreadyApplied = await _firestoreService.hasStudentApplied(
+      final alreadyApplied = await context.read<PostulationRepository>().hasStudentApplied(
         studentId,
         offer.id,
       );
@@ -152,20 +151,25 @@ class _StudentHomePageState extends State<StudentHomePage> {
         return;
       }
 
-      final docRef = FirebaseFirestore.instance
-          .collection('applications')
-          .doc();
       final postulacion = PostulacionModel(
-        id: docRef.id,
+        id: '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(999999)}',
         ofertaId: offer.id,
         studentId: studentId,
         createdAt: DateTime.now(),
       );
-      await _firestoreService.createOrUpdatePostulacion(postulacion);
+      final isPending = await context
+          .read<PostulationRepository>()
+          .createOrUpdatePostulacion(postulacion);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Postulación enviada exitosamente!')),
+          SnackBar(
+            content: Text(
+              isPending
+                  ? 'Postulación guardada. ${AppStates.syncPendingLabel}.'
+                  : '¡Postulación enviada exitosamente!',
+            ),
+          ),
         );
         setState(() {
           _selectedOffer = null;
@@ -184,7 +188,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
   // ─── INICIO (OFERTAS) ───────────────────────────────────────
   Widget _buildHomeTab() {
     return StreamBuilder<List<OfertaModel>>(
-      stream: _firestoreService.getPublishedOffersStream(),
+      stream: context.read<OfferRepository>().watchPublishedOffers(),
       builder: (context, snapshot) {
         final allOffers = snapshot.data ?? [];
         final filteredOffers = _searchQuery.isEmpty
@@ -424,7 +428,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   ),
                   const SizedBox(height: 20),
                   FutureBuilder<bool>(
-                    future: _firestoreService.hasStudentApplied(
+                    future: context.read<PostulationRepository>().hasStudentApplied(
                       studentId,
                       offer.id,
                     ),
@@ -498,7 +502,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
     final studentId = _authService.currentUser?.uid ?? '';
 
     return StreamBuilder<List<PostulacionModel>>(
-      stream: _firestoreService.getApplicationsByStudentStream(studentId),
+      stream: context.read<PostulationRepository>().watchApplicationsByStudent(studentId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -536,7 +540,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
             final post = postulaciones[i];
             return _PostulacionCard(
               postulacion: post,
-              firestoreService: _firestoreService,
               onVerSeguimiento: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -649,12 +652,10 @@ class _StudentHomePageState extends State<StudentHomePage> {
 // ─── WIDGET AUXILIAR: TARJETA DE POSTULACIÓN ────────────────────────────────
 class _PostulacionCard extends StatelessWidget {
   final PostulacionModel postulacion;
-  final FirestoreService firestoreService;
   final VoidCallback onVerSeguimiento;
 
   const _PostulacionCard({
     required this.postulacion,
-    required this.firestoreService,
     required this.onVerSeguimiento,
   });
 
@@ -700,7 +701,7 @@ class _PostulacionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<OfertaModel?>(
-      future: firestoreService.getOfertaById(postulacion.ofertaId),
+      future: context.read<OfferRepository>().getOfertaById(postulacion.ofertaId),
       builder: (context, snapshot) {
         final oferta = snapshot.data;
         final color = _estadoColor(postulacion.estado);
@@ -743,6 +744,39 @@ class _PostulacionCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (postulacion.necesitaSincronizacion) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber.shade700),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.cloud_upload_outlined,
+                                size: 14,
+                                color: Colors.amber.shade900,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                AppStates.syncPendingLabel,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.amber.shade900,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (postulacion.estado == PostulacionEstado.rechazado &&
                           postulacion.motivoRechazo != null) ...[
                         const SizedBox(height: 4),

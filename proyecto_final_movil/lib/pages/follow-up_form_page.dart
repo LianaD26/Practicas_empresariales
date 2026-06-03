@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/follow-up_model.dart';
-import '../services/follow-up_service.dart';
+import '../repositories/follow_up_repository.dart';
 import '../validators/follow-up_validators.dart';
 
 class SeguimientoFormPage extends StatefulWidget {
@@ -21,7 +22,6 @@ class SeguimientoFormPage extends StatefulWidget {
 class _SeguimientoFormPageState extends State<SeguimientoFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _comentarioController = TextEditingController();
-  final _seguimientoService = SeguimientoService();
 
   EstadoSeguimiento _estadoSeleccionado = EstadoSeguimiento.pendiente;
   bool _isLoading = false;
@@ -58,9 +58,9 @@ class _SeguimientoFormPageState extends State<SeguimientoFormPage> {
           comentario: _comentarioController.text.trim(),
           estado: _estadoSeleccionado,
         );
-        await _seguimientoService.actualizarSeguimiento(actualizado);
+        await context.read<FollowUpRepository>().actualizarSeguimiento(actualizado);
       } else {
-        await _seguimientoService.crearSeguimiento(
+        await context.read<FollowUpRepository>().crearSeguimiento(
           comentario: _comentarioController.text.trim(),
           estado: _estadoSeleccionado,
           postulacionId: widget.postulacionId,

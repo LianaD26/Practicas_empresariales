@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/connectivity_service.dart';
 import '../validators/auth_validators.dart';
+import '../repositories/user_repository.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -39,9 +42,25 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+      // Verificar conexión antes de llamar a Firebase
+      final hasConnection = await ConnectivityService().hasConnection;
+      if (!hasConnection) {
+        // Si Firebase Auth tiene sesión cacheada, el AuthWrapper ya lo maneja.
+        // Si no hay sesión previa, no podemos autenticar sin red.
+        if (mounted) {
+          setState(() {
+            _errorMessage =
+                'Sin conexión a internet. Si ya iniciaste sesión antes, '
+                'espera a que la app cargue tu sesión guardada automáticamente.';
+          });
+        }
+        return;
+      }
+
       final user = await _authService.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        userRepository: context.read<UserRepository>(),
       );
 
       if (mounted) {
@@ -63,12 +82,16 @@ class _LoginPageState extends State<LoginPage> {
         message = 'Usuario no encontrado';
       } else if (e.code == 'wrong-password') {
         message = 'Contraseña incorrecta';
+      } else if (e.code == 'invalid-credential') {
+        message = 'Credenciales inválidas. Verifica tu email y contraseña';
       } else if (e.code == 'invalid-email') {
         message = 'Email inválido';
       } else if (e.code == 'user-disabled') {
         message = 'Usuario deshabilitado';
       } else if (e.code == 'too-many-requests') {
         message = 'Demasiados intentos. Intenta más tarde';
+      } else if (e.code == 'network-request-failed') {
+        message = 'Sin conexión a internet. Verifica tu red e inténtalo de nuevo';
       }
 
       if (mounted) {
