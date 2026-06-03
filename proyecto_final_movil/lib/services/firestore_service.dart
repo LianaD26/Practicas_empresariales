@@ -414,14 +414,27 @@ class FirestoreService {
   }
 
   /// Actualiza el estado de una postulación.
+  /// REGLA 4: Valida que solo coordinador puede cambiar estado
   /// REGLA 6: Si [estado] es [PostulacionEstado.rechazado], [motivo] es obligatorio.
   Future<void> updateApplicationStatus(
     String applicationId,
     PostulacionEstado estado, {
     String? motivo,
+    UserModel? currentUser,
   }) async {
-    // Aplica la regla 6 antes de persistir
-    PermissionService().validateRejectionReason(estado, motivo);
+    final permissionService = PermissionService();
+
+    // REGLA 4: Validar que solo coordinador puede cambiar estado
+    if (currentUser != null &&
+        !permissionService.canModifyApplicationStatus(currentUser)) {
+      throw ArgumentError(
+        'Solo coordinadores pueden cambiar el estado de postulaciones',
+      );
+    }
+
+    // REGLA 6: Aplica validación de motivo para rechazo
+    permissionService.validateRejectionReason(estado, motivo);
+
     try {
       await _firestore
           .collection(FirestoreCollections.applications)

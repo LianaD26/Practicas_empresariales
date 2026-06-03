@@ -66,11 +66,6 @@ class PermissionService {
     return user.role == UserRoles.coordinator && user.isActive;
   }
 
-  /// Verifica si el usuario puede gestionar usuarios
-  bool canManageUsers(UserModel user) {
-    return user.role == UserRoles.coordinator && user.isActive;
-  }
-
   /// Verifica si el usuario puede acceder a la app principal
   bool canAccessMainApp(UserModel user) {
     // Estudiantes, Empresas y Coordinadores activos pueden acceder
@@ -148,7 +143,7 @@ class PermissionService {
       'canPreselect': canPreselect(user),
       'canApproveApplication': canApproveApplication(user),
       'canRejectApplication': canRejectApplication(user),
-      'canManageUsers': canManageUsers(user),
+
       'canAccessMainApp': canAccessMainApp(user),
       'isBlocked': isUserBlocked(user),
       'isPendingApproval': isUserPendingApproval(user),

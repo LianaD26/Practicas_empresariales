@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -8,10 +7,7 @@ import '../services/auth_service.dart';
 class CoordinatorHomePage extends StatefulWidget {
   final UserModel user;
 
-  const CoordinatorHomePage({
-    super.key,
-    required this.user,
-  });
+  const CoordinatorHomePage({super.key, required this.user});
 
   @override
   State<CoordinatorHomePage> createState() => _CoordinatorHomePageState();
@@ -45,9 +41,9 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
         await _authService.signOut();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -87,17 +83,10 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
             label: 'Postulaciones',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Usuarios',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.assessment),
             label: 'Reportes',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
     );
@@ -110,10 +99,8 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
       case 1:
         return _buildApplicationsTab();
       case 2:
-        return _buildUsersTab();
-      case 3:
         return _buildReportsTab();
-      case 4:
+      case 3:
         return _buildProfileTab();
       default:
         return _buildDashboardTab();
@@ -147,10 +134,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
                 children: [
                   const Text(
                     'Bienvenido',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -170,10 +154,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
           // Estadísticas rápidas
           const Text(
             'Estadísticas',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
@@ -204,10 +185,7 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
           // Acciones rápidas
           const Text(
             'Acciones Rápidas',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
@@ -218,18 +196,6 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
             onTap: () {
               setState(() {
                 _selectedIndex = 1;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-
-          _buildActionCard(
-            icon: Icons.people,
-            title: 'Gestionar Usuarios',
-            description: 'Administra permisos y estado de cuentas',
-            onTap: () {
-              setState(() {
-                _selectedIndex = 2;
               });
             },
           ),
@@ -263,153 +229,6 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
         ),
       ),
     );
-  }
-
-  Widget _buildUsersTab() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.people, size: 64, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No hay usuarios',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final users = snapshot.data!.docs
-            .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
-            .toList();
-
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const Text(
-              'Gestión de Usuarios',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ...users.map((user) => _buildUserCard(user)).toList(),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildUserCard(UserModel user) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ExpansionTile(
-        leading: Icon(
-          user.role == 'coordinator'
-              ? Icons.admin_panel_settings
-              : user.role == 'company'
-                  ? Icons.business
-                  : Icons.school,
-          color: Colors.teal,
-        ),
-        title: Text(user.displayName),
-        subtitle: Text('${user.email} • ${user.role}'),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Divider(),
-                const SizedBox(height: 12),
-                const Text(
-                  'Cambiar Estado:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Los coordinadores solo pueden cambiar el estado de aprobación de los usuarios.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildStatusButton(
-                        label: 'Activo',
-                        isSelected: user.status == UserStatus.active,
-                        onPressed: () => _updateUserStatus(user.uid, UserStatus.active),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildStatusButton(
-                        label: 'Pendiente',
-                        isSelected: user.status == UserStatus.pendingApproval,
-                        onPressed: () => _updateUserStatus(user.uid, UserStatus.pendingApproval),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildStatusButton(
-                        label: 'Bloqueado',
-                        isSelected: user.status == UserStatus.blocked,
-                        onPressed: () => _updateUserStatus(user.uid, UserStatus.blocked),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Estado Actual: ${user.status.toString().split('.').last}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusButton({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.blue : Colors.grey.shade300,
-        foregroundColor: isSelected ? Colors.white : Colors.black,
-      ),
-      child: Text(label),
-    );
-  }
-
-  Future<void> _updateUserStatus(String uid, UserStatus status) async {
-    try {
-      await _authService.updateUserStatus(uid, status);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Estado actualizado a ${status.toString().split('.').last}')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
   }
 
   Widget _buildReportsTab() {
@@ -515,8 +334,15 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
       child: Card(
         child: ListTile(
           leading: Icon(icon, size: 32, color: Colors.teal),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(description, maxLines: 2, overflow: TextOverflow.ellipsis),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
           trailing: const Icon(Icons.arrow_forward),
         ),
       ),
@@ -531,8 +357,14 @@ class _CoordinatorHomePageState extends State<CoordinatorHomePage> {
     return Card(
       child: ListTile(
         leading: Icon(icon, color: Colors.teal),
-        title: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        subtitle: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        title: Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        subtitle: Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }

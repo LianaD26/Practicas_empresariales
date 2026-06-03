@@ -5,8 +5,8 @@ import '../models/postulacion_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../services/permission_service.dart';
 import 'documento_list_page.dart';
-import 'seguimiento_list_page.dart';
 
 /// Página principal para estudiantes
 /// Pueden ver ofertas, postularse y ver sus postulaciones
@@ -123,6 +123,22 @@ class _StudentHomePageState extends State<StudentHomePage> {
     if (studentId.isEmpty) return;
 
     try {
+      // REGLA 2: Verificar que la oferta está abierta para postulaciones
+      final permissionService = PermissionService();
+      if (!permissionService.canReceiveApplications(offer.estado)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Esta oferta ya no está disponible para postulaciones',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      // REGLA 1: Verificar postulación duplicada
       final alreadyApplied = await _firestoreService.hasStudentApplied(
         studentId,
         offer.id,
@@ -139,10 +155,13 @@ class _StudentHomePageState extends State<StudentHomePage> {
       final docRef = FirebaseFirestore.instance
           .collection('applications')
           .doc();
+      // REGLA 3: Usar el estado inicial definido por la regla de negocio
+      final initialState = permissionService.getInitialApplicationState();
       final postulacion = PostulacionModel(
         id: docRef.id,
         ofertaId: offer.id,
         studentId: studentId,
+        estado: initialState,
         createdAt: DateTime.now(),
       );
       await _firestoreService.createOrUpdatePostulacion(postulacion);
@@ -521,15 +540,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
             return _PostulacionCard(
               postulacion: post,
               firestoreService: _firestoreService,
-              onVerSeguimiento: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => SeguimientoListPage(
-                    postulacionId: post.id,
-                    readOnly: true,
-                  ),
-                ),
-              ),
             );
           },
         );
@@ -634,12 +644,10 @@ class _StudentHomePageState extends State<StudentHomePage> {
 class _PostulacionCard extends StatelessWidget {
   final PostulacionModel postulacion;
   final FirestoreService firestoreService;
-  final VoidCallback onVerSeguimiento;
 
   const _PostulacionCard({
     required this.postulacion,
     required this.firestoreService,
-    required this.onVerSeguimiento,
   });
 
   Color _estadoColor(PostulacionEstado estado) {
@@ -740,14 +748,6 @@ class _PostulacionCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.track_changes,
-                    color: Colors.deepPurple,
-                  ),
-                  tooltip: 'Ver seguimiento',
-                  onPressed: onVerSeguimiento,
                 ),
               ],
             ),
