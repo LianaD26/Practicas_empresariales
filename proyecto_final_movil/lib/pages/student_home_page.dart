@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../core/constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../widgets/require_role.dart';
 
 /// Página principal para estudiantes
 /// Pueden ver ofertas, postularse y ver sus postulaciones
@@ -55,45 +57,49 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inicio - Estudiante'),
-        centerTitle: true,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-            tooltip: 'Cerrar Sesión',
-          ),
-        ],
-      ),
-      body: _buildBody(),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work),
-            label: 'Ofertas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder_special),
-            label: 'Mis Postulaciones',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
+    return RequireRole(
+      user: widget.user,
+      allowedRoles: const [UserRoles.student],
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Inicio - Estudiante'),
+          centerTitle: true,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: _handleLogout,
+              tooltip: 'Cerrar Sesión',
+            ),
+          ],
+        ),
+        body: _buildBody(),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Inicio',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.work),
+              label: 'Ofertas',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.folder_special),
+              label: 'Mis Postulaciones',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'Perfil',
+            ),
+          ],
+        ),
       ),
     );
   }

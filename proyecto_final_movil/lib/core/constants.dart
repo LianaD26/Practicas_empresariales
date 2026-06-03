@@ -3,9 +3,10 @@ class UserRoles {
   static const String student = 'student';
   static const String company = 'company';
   static const String coordinator = 'coordinator';
+  static const String superadmin = 'superadmin';
 
   static bool isValidRole(String role) {
-    return [student, company, coordinator].contains(role);
+    return [student, company, coordinator, superadmin].contains(role);
   }
 
   static String getDisplayName(String role) {
@@ -16,6 +17,8 @@ class UserRoles {
         return 'Empresa';
       case coordinator:
         return 'Coordinador';
+      case superadmin:
+        return 'Super Administrador';
       default:
         return 'Usuario';
     }
@@ -115,6 +118,7 @@ class AppRoutes {
   static const String studentHome = '/student/home';
   static const String companyHome = '/company/home';
   static const String coordinatorHome = '/coordinator/home';
+  static const String superadminHome = '/superadmin/home';
   static const String blocked = '/blocked';
   static const String pendingApproval = '/pending-approval';
   static const String offline = '/offline';

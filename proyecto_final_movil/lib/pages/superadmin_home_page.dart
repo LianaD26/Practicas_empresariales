@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../widgets/require_role.dart';
 
 /// Página principal para Super Administrador
 /// Puede cambiar roles y estados de usuarios
@@ -55,43 +57,47 @@ class _SuperAdminHomePageState extends State<SuperAdminHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard - Super Admin'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.deepPurple,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-            tooltip: 'Cerrar Sesión',
-          ),
-        ],
-      ),
-      body: _buildBody(),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Gestionar Usuarios',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
+    return RequireRole(
+      user: widget.user,
+      allowedRoles: const [UserRoles.superadmin],
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Dashboard - Super Admin'),
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.deepPurple,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: _handleLogout,
+              tooltip: 'Cerrar Sesión',
+            ),
+          ],
+        ),
+        body: _buildBody(),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people),
+              label: 'Gestionar Usuarios',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'Perfil',
+            ),
+          ],
+        ),
       ),
     );
   }

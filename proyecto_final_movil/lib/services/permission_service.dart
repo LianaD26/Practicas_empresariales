@@ -143,11 +143,16 @@ class PermissionService {
       'canPreselect': canPreselect(user),
       'canApproveApplication': canApproveApplication(user),
       'canRejectApplication': canRejectApplication(user),
-
+      'canChangeRoles': canChangeRoles(user),
       'canAccessMainApp': canAccessMainApp(user),
       'isBlocked': isUserBlocked(user),
       'isPendingApproval': isUserPendingApproval(user),
     };
+  }
+
+  /// Verifica si el usuario puede cambiar roles de otros usuarios
+  bool canChangeRoles(UserModel user) {
+    return user.role == UserRoles.superadmin && user.isActive;
   }
 
   /// Obtiene el rol de inicio recomendado para un usuario
@@ -169,6 +174,8 @@ class PermissionService {
           return AppRoutes.studentHome;
         case UserRoles.company:
           return AppRoutes.companyHome;
+        case UserRoles.superadmin:
+          return AppRoutes.superadminHome;
         case UserRoles.coordinator:
           return AppRoutes.coordinatorHome;
         default:
