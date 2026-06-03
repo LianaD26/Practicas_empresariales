@@ -164,7 +164,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
             description: 'Publica una nueva oferta de práctica',
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const OfertaFormPage()),
+              MaterialPageRoute(builder: (_) => const OfferFormPage()),
             ),
           ),
           const SizedBox(height: 12),
@@ -204,7 +204,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const OfertaFormPage()),
+          MaterialPageRoute(builder: (_) => const OfferFormPage()),
         ),
         icon: const Icon(Icons.add),
         label: const Text('Nueva Oferta'),
@@ -248,7 +248,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
                 onEdit: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => OfertaFormPage(oferta: oferta),
+                    builder: (_) => OfferFormPage(oferta: oferta),
                   ),
                 ),
                 onDelete: () => _confirmDeleteOferta(oferta),

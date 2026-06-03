@@ -600,7 +600,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const DocumentoListPage()),
+                MaterialPageRoute(builder: (_) => const DocumentListPage()),
               ),
             ),
           ),
