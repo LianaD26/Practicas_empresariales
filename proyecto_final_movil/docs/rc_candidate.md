@@ -80,7 +80,6 @@ Esta versión incluye las funcionalidades principales para la gestión de práct
 ## Postulaciones
 
 * Asociar documentos específicos a cada postulación.
-* Gestión automática de vacantes disponibles.
 * Cierre automático de ofertas cuando no existan vacantes disponibles.
 * Notificaciones de cambios de estado.
 

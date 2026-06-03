@@ -1,6 +1,4 @@
 import '../core/constants.dart';
-import '../core/map_parsers.dart';
-
 /// Estados posibles de una postulación
 enum PostulacionEstado { postulado, preseleccionado, aprobado, rechazado }
 
@@ -34,8 +32,8 @@ class PostulacionModel {
       'studentId': studentId,
       'estado': estado.toString().split('.').last, // 'postulado', 'preseleccionado', 'aprobado', 'rechazado'
       'motivoRechazo': motivoRechazo,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
       'syncStatus': syncStatus,
     };
   }
@@ -55,14 +53,26 @@ class PostulacionModel {
       }
     }
 
+    // Función auxiliar para convertir createdAt/updatedAt
+    DateTime? _parseDateTime(dynamic value) {
+      if (value == null) return null;
+      if (value is DateTime) return value;
+      if (value is String) return DateTime.parse(value);
+      // Si es Timestamp de Firestore
+      if (value.runtimeType.toString() == 'Timestamp') {
+        return value.toDate();
+      }
+      return null;
+    }
+
     return PostulacionModel(
       id: map['id'] ?? '',
       ofertaId: map['ofertaId'] ?? '',
       studentId: map['studentId'] ?? '',
       estado: estadoEnum,
       motivoRechazo: map['motivoRechazo'],
-      createdAt: parseMapDateTime(map['createdAt']),
-      updatedAt: parseMapDateTimeNullable(map['updatedAt']),
+      createdAt: _parseDateTime(map['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDateTime(map['updatedAt']),
       syncStatus: map['syncStatus'] ?? 'synced',
     );
   }

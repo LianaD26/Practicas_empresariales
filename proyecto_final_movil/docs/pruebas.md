@@ -282,42 +282,163 @@ Las pruebas implementadas validan:
 * Restricciones de acceso según estado de usuario.
 * Comportamiento de sincronización (`pendingSync`).
 
-# --------- Ejecución de pruebas automatizadas -------------
+# 9. Pruebas automatizadas (Widget Tests)
+Las pruebas de widgets fueron implementadas utilizando el paquete `flutter_test`. Estas pruebas verifican la correcta construcción de modelos de usuario, la validación de estados y roles, y el comportamiento esperado de la lógica asociada a la navegación basada en perfiles dentro de la aplicación.
 
-Para ejecutar todas las pruebas unitarias del proyecto:
+## WT-001: Validación de estados de usuario en AuthWrapper
 
-```bash
-flutter test
-```
+**Objetivo:** Verificar que el modelo de usuario identifique correctamente los estados `active`, `blocked` y `pendingApproval`.
 
-Para ejecutar únicamente las pruebas de permisos:
+**Regla de negocio validada:** El sistema debe reconocer el estado de cada usuario para determinar el acceso a las funcionalidades de la plataforma.
 
-```bash
-flutter test test/unit/permission_service_test.dart
-```
+**Resultado esperado:** Las propiedades `isActive`, `isBlocked` e `isPendingApproval` retornan los valores correctos según el estado asignado al usuario.
 
-Para ejecutar únicamente las pruebas de postulaciones:
+---
 
-```bash
-flutter test test/unit/postulacion_model_test.dart
-```
+## WT-002: Detección de usuario bloqueado
 
-Para ejecutar únicamente las pruebas de validadores:
+**Objetivo:** Verificar que un usuario con estado `blocked` sea identificado correctamente.
 
-```bash
-flutter test test/unit/auth_validators_test.dart
-```
+**Regla de negocio validada:** Los usuarios bloqueados deben ser diferenciados de los usuarios activos y pendientes de aprobación.
 
-## Resultado esperado
+**Resultado esperado:** La propiedad `isBlocked` retorna `true`, mientras que `isActive` e `isPendingApproval` retornan `false`.
 
-Al ejecutar los comandos anteriores, Flutter debe mostrar una salida similar a:
+---
 
-```text
-00:02 +6: All tests passed!
-```
+## WT-003: Detección de usuario pendiente de aprobación
 
-Lo anterior indica que las seis pruebas unitarias fueron ejecutadas correctamente y que todas las reglas de negocio verificadas cumplen con el comportamiento esperado.
+**Objetivo:** Verificar que un usuario con estado `pendingApproval` sea identificado correctamente.
 
-```
-```
+**Regla de negocio validada:** Los usuarios pendientes de aprobación no deben considerarse activos ni bloqueados.
 
+**Resultado esperado:** La propiedad `isPendingApproval` retorna `true`, mientras que `isActive` e `isBlocked` retornan `false`.
+
+---
+
+## WT-004: Serialización y deserialización de UserModel
+
+**Objetivo:** Verificar que los datos de un usuario se conviertan correctamente a un mapa para su almacenamiento o transferencia.
+
+**Regla de negocio validada:** La información del usuario debe conservar sus atributos al realizar procesos de serialización.
+
+**Resultado esperado:** El método `toMap()` genera un mapa con los valores correctos para los campos `uid`, `email`, `displayName`, `role` y `status`.
+
+---
+
+## WT-005: Validación de constantes de roles
+
+**Objetivo:** Verificar que las constantes definidas para los roles de usuario correspondan a los valores esperados.
+
+**Regla de negocio validada:** Los roles del sistema deben mantenerse consistentes para garantizar el correcto funcionamiento de la navegación y los permisos.
+
+**Resultado esperado:** Las constantes `student`, `company`, `coordinator` y `superadmin` contienen los valores definidos en la configuración del sistema.
+
+---
+
+## WT-006: Construcción de usuario con rol estudiante
+
+**Objetivo:** Verificar que un usuario con rol `student` pueda ser creado correctamente.
+
+**Regla de negocio validada:** La página principal debe poder identificar usuarios estudiantes para mostrar la interfaz correspondiente.
+
+**Resultado esperado:** El usuario posee el rol `student` y su estado es reconocido como activo.
+
+---
+
+## WT-007: Construcción de usuario con rol empresa
+
+**Objetivo:** Verificar que un usuario con rol `company` pueda ser creado correctamente.
+
+**Regla de negocio validada:** La página principal debe poder identificar usuarios empresa para habilitar las funcionalidades asociadas a este perfil.
+
+**Resultado esperado:** El usuario posee el rol `company` y su estado es reconocido como activo.
+
+---
+
+## WT-008: Gestión de todos los roles en HomePage
+
+**Objetivo:** Verificar que la lógica de la página principal pueda manejar todos los roles definidos en el sistema.
+
+**Regla de negocio validada:** La navegación basada en roles debe funcionar para estudiantes, empresas, coordinadores y superadministradores.
+
+**Resultado esperado:** Cada usuario conserva correctamente su rol asignado y es reconocido como usuario activo durante el proceso de validación.
+
+---
+
+## WT-009: Cambio de roles permitido únicamente para superadministradores
+
+**Objetivo:** Verificar que únicamente los usuarios con rol `superadmin` y estado activo puedan modificar los roles de otros usuarios.
+
+**Regla de negocio validada:** La gestión de roles es una función exclusiva de los superadministradores activos.
+
+**Resultado esperado:** El método `canChangeRoles()` retorna `true` para un superadministrador activo y `false` para otros roles o superadministradores bloqueados.
+
+---
+
+## WT-010: Creación de ofertas permitida únicamente para empresas activas
+
+**Objetivo:** Verificar que solo las empresas con estado activo puedan publicar ofertas laborales.
+
+**Regla de negocio validada:** La publicación de ofertas está restringida a usuarios con rol `company` y estado activo.
+
+**Resultado esperado:** El método `canCreateOffer()` retorna `true` para empresas activas y `false` para estudiantes o empresas pendientes de aprobación.
+
+---
+
+## WT-011: Aprobación y rechazo de postulaciones por coordinadores
+
+**Objetivo:** Verificar que únicamente los coordinadores activos puedan aprobar o rechazar postulaciones.
+
+**Regla de negocio validada:** La gestión de postulaciones corresponde exclusivamente al rol de coordinador.
+
+**Resultado esperado:** Los métodos `canApproveApplication()` y `canRejectApplication()` retornan `true` para coordinadores activos y `false` para estudiantes o empresas.
+
+---
+
+## WT-012: Postulación a ofertas permitida únicamente para estudiantes activos
+
+**Objetivo:** Verificar que solo los estudiantes con estado activo puedan postularse a ofertas laborales.
+
+**Regla de negocio validada:** La funcionalidad de postulación está restringida a estudiantes activos.
+
+**Resultado esperado:** El método `canApplyToOffer()` retorna `true` para estudiantes activos y `false` para empresas o estudiantes pendientes de aprobación.
+
+---
+
+## WT-013: Acceso autorizado mediante RequireRole
+
+**Objetivo:** Verificar que el widget `RequireRole` permita visualizar el contenido cuando el usuario posee uno de los roles autorizados.
+
+**Regla de negocio validada:** Los usuarios con permisos adecuados deben acceder a las vistas protegidas.
+
+**Resultado esperado:** El contenido protegido se muestra correctamente cuando el rol del usuario coincide con alguno de los roles permitidos.
+
+---
+
+## WT-014: Restricción de acceso por rol no autorizado
+
+**Objetivo:** Verificar que el widget `RequireRole` impida el acceso cuando el usuario no posee los roles requeridos.
+
+**Regla de negocio validada:** Los usuarios sin permisos suficientes no deben visualizar contenido restringido.
+
+**Resultado esperado:** El contenido protegido no se muestra y se presenta la interfaz de acceso denegado.
+
+---
+
+## WT-015: Acceso permitido para múltiples roles autorizados
+
+**Objetivo:** Verificar que el widget `RequireRole` permita el acceso cuando el usuario posee cualquiera de los roles incluidos en la lista de permisos.
+
+**Regla de negocio validada:** Una vista puede ser compartida entre varios perfiles autorizados.
+
+**Resultado esperado:** El contenido protegido se muestra correctamente cuando el usuario posee al menos uno de los roles configurados.
+
+---
+
+## WT-016: Validación de usuario pendiente de aprobación
+
+**Objetivo:** Verificar que un usuario en estado `pendingApproval` sea identificado correctamente como usuario inactivo.
+
+**Regla de negocio validada:** Los usuarios pendientes de aprobación no deben ser considerados activos dentro del sistema.
+
+**Resultado esperado:** La propiedad `isPendingApproval` retorna `true`, la propiedad `isActive` retorna `false` y el rol del usuario se mantiene correctamente asignado.

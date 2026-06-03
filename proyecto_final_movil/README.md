@@ -214,6 +214,42 @@ La autenticación se realiza mediante Firebase Authentication utilizando correo 
 # Explicación persistencia local
 La aplicación utiliza almacenamiento local para conservar información temporal de sesión y reducir consultas innecesarias a Firebase. Esto permite mantener datos básicos del usuario autenticado y mejorar la experiencia de navegación cuando la conectividad es limitada.
 
+## Tecnologías Utilizadas
+
+###  Drift
+Se utilizó Drift como herramienta de persistencia local. Drift permite trabajar con bases de datos SQLite de forma segura y organizada dentro de Flutter.
+
+### SQLite
+SQLite es el motor de base de datos donde se almacenan los datos localmente en el dispositivo.
+
+### Firebase Firestore
+Firestore continúa siendo la base de datos principal en la nube para almacenar y compartir la información entre usuarios.
+
+## Arquitectura Offline First
+
+Se implementó una estrategia Offline First, donde la aplicación utiliza primero los datos almacenados localmente y luego sincroniza la información con Firestore cuando existe conexión.
+
+**Flujo general:**
+
+text Usuario -> App -> Drift (Local) -> Firestore (Remoto) 
+
+## Funcionamiento
+
+### Cuando hay Internet
+
+1. La aplicación consulta Firestore.
+2. Los datos obtenidos se guardan en Drift.
+3. La información se muestra al usuario.
+
+### Cuando no hay Internet
+
+1. La aplicación consulta los datos almacenados en Drift.
+2. La información se muestra sin necesidad de conexión.
+
+De esta forma el usuario puede seguir utilizando la aplicación aun cuando pierda acceso a la red.
+
+**La implementación de Drift junto con la estrategia Offline First permite que la aplicación continúe operando sin conexión, almacenando información localmente y sincronizándola con Firebase cuando hay acceso a Internet. Esto mejora la disponibilidad, el rendimiento y la confiabilidad del sistema.**
+
 # Explicación de sincronización con Firebase
 La información se almacena en Firestore y se sincroniza mediante consultas y streams en tiempo real. Cuando un usuario realiza una acción, los cambios se reflejan inmediatamente en la base de datos y son propagados a los demás usuarios autorizados que estén consultando la misma información.
 
