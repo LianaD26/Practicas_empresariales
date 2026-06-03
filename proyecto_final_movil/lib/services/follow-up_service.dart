@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/seguimiento_model.dart';
+import '../models/follow-up_model.dart';
 
 class SeguimientoService {
   static final SeguimientoService _instance = SeguimientoService._internal();

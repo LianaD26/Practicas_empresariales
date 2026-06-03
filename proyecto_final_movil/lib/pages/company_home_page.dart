@@ -6,7 +6,13 @@ import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../widgets/require_role.dart';
+import '../models/offer_model.dart';
+import '../models/postulation_model.dart';
+import '../models/user_model.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 import 'offer_form_page.dart';
+import 'follow-up_list_page.dart';
 
 /// Página principal para empresas
 /// Pueden crear/editar ofertas, ver postulaciones y preseleccionar candidatos
@@ -23,13 +29,6 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
   int _selectedIndex = 0;
-
-  static const _pageLabels = [
-    'Inicio',
-    'Mis Ofertas',
-    'Postulantes',
-    'Mi Perfil',
-  ];
 
   Future<void> _handleLogout() async {
     final confirmed = await showDialog<bool>(
@@ -296,10 +295,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
                 onVerPostulantes: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => _PostulantesOfertaPage(
-                      oferta: oferta,
-                      currentUser: widget.user,
-                    ),
+                    builder: (_) => _PostulantesOfertaPage(oferta: oferta),
                   ),
                 ),
               );
@@ -396,10 +392,7 @@ class _CompanyHomePageState extends State<CompanyHomePage> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => _PostulantesOfertaPage(
-                      oferta: oferta,
-                      currentUser: widget.user,
-                    ),
+                    builder: (_) => _PostulantesOfertaPage(oferta: oferta),
                   ),
                 ),
               ),
@@ -658,12 +651,8 @@ class _OfertaCard extends StatelessWidget {
 // ─── PÁGINA: POSTULANTES DE UNA OFERTA ───────────────────────────────────────
 class _PostulantesOfertaPage extends StatelessWidget {
   final OfertaModel oferta;
-  final UserModel currentUser;
 
-  const _PostulantesOfertaPage({
-    required this.oferta,
-    required this.currentUser,
-  });
+  const _PostulantesOfertaPage({required this.oferta});
 
   @override
   Widget build(BuildContext context) {
@@ -705,7 +694,6 @@ class _PostulantesOfertaPage extends StatelessWidget {
               return _PostulanteCard(
                 postulacion: post,
                 firestoreService: firestoreService,
-                currentUser: currentUser,
               );
             },
           );
@@ -719,12 +707,10 @@ class _PostulantesOfertaPage extends StatelessWidget {
 class _PostulanteCard extends StatelessWidget {
   final PostulacionModel postulacion;
   final FirestoreService firestoreService;
-  final UserModel currentUser;
 
   const _PostulanteCard({
     required this.postulacion,
     required this.firestoreService,
-    required this.currentUser,
   });
 
   Color _estadoColor(PostulacionEstado estado) {
@@ -764,19 +750,14 @@ class _PostulanteCard extends StatelessWidget {
       context: context,
       builder: (_) => SimpleDialog(
         title: const Text('Cambiar estado'),
-        children:
-            const [
-                  PostulacionEstado.preseleccionado,
-                  PostulacionEstado.aprobado,
-                  PostulacionEstado.rechazado,
-                ]
-                .map(
-                  (e) => SimpleDialogOption(
-                    onPressed: () => Navigator.pop(context, e),
-                    child: Text(_estadoLabel(e)),
-                  ),
-                )
-                .toList(),
+        children: PostulacionEstado.values
+            .map(
+              (e) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(context, e),
+                child: Text(_estadoLabel(e)),
+              ),
+            )
+            .toList(),
       ),
     );
 
@@ -810,23 +791,10 @@ class _PostulanteCard extends StatelessWidget {
     }
 
     try {
-      // La empresa puede cambiar cualquier estado de la postulación
-      if (!currentUser.isActive) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tu cuenta debe estar activa para cambiar estados'),
-            ),
-          );
-        }
-        return;
-      }
-
       await firestoreService.updateApplicationStatus(
         post.id,
         nuevoEstado,
         motivo: motivo,
-        currentUser: currentUser,
       );
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -887,34 +855,28 @@ class _PostulanteCard extends StatelessWidget {
               },
             ),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: color.withOpacity(0.5)),
-              ),
-              child: Text(
-                _estadoLabel(postulacion.estado),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            if (postulacion.estado == PostulacionEstado.rechazado &&
-                postulacion.motivoRechazo != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Motivo: ${postulacion.motivoRechazo}',
-                style: const TextStyle(fontSize: 12, color: Colors.red),
-              ),
-            ],
-            const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    _estadoLabel(postulacion.estado),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Spacer(),
                 TextButton.icon(
                   onPressed: () => _cambiarEstado(context, postulacion),
                   icon: const Icon(Icons.edit, size: 16),
@@ -924,8 +886,34 @@ class _PostulanteCard extends StatelessWidget {
                     padding: EdgeInsets.zero,
                   ),
                 ),
+                const SizedBox(width: 4),
+                TextButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SeguimientoListPage(
+                        postulacionId: postulacion.id,
+                        readOnly: false,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.track_changes, size: 16),
+                  label: const Text('Seguimiento'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.deepPurple,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
               ],
             ),
+            if (postulacion.estado == PostulacionEstado.rechazado &&
+                postulacion.motivoRechazo != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Motivo: ${postulacion.motivoRechazo}',
+                style: const TextStyle(fontSize: 12, color: Colors.red),
+              ),
+            ],
           ],
         ),
       ),
