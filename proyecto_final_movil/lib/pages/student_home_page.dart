@@ -94,23 +94,16 @@ class _StudentHomePageState extends State<StudentHomePage> {
               _selectedIndex = index;
             });
           },
+          selectedItemColor: Colors.deepPurple,
+          unselectedItemColor: Colors.grey,
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Inicio',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.work),
-              label: 'Ofertas',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
+            BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Ofertas'),
             BottomNavigationBarItem(
               icon: Icon(Icons.folder_special),
               label: 'Mis Postulaciones',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Perfil',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
           ],
         ),
       ),
@@ -138,10 +131,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
     if (studentId.isEmpty) return;
 
     try {
-      final alreadyApplied = await context.read<PostulationRepository>().hasStudentApplied(
-        studentId,
-        offer.id,
-      );
+      final alreadyApplied = await context
+          .read<PostulationRepository>()
+          .hasStudentApplied(studentId, offer.id);
       if (alreadyApplied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -428,10 +420,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   ),
                   const SizedBox(height: 20),
                   FutureBuilder<bool>(
-                    future: context.read<PostulationRepository>().hasStudentApplied(
-                      studentId,
-                      offer.id,
-                    ),
+                    future: context
+                        .read<PostulationRepository>()
+                        .hasStudentApplied(studentId, offer.id),
                     builder: (context, snap) {
                       final alreadyApplied = snap.data ?? false;
                       return SizedBox(
@@ -502,7 +493,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
     final studentId = _authService.currentUser?.uid ?? '';
 
     return StreamBuilder<List<PostulacionModel>>(
-      stream: context.read<PostulationRepository>().watchApplicationsByStudent(studentId),
+      stream: context.read<PostulationRepository>().watchApplicationsByStudent(
+        studentId,
+      ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -701,7 +694,9 @@ class _PostulacionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<OfertaModel?>(
-      future: context.read<OfferRepository>().getOfertaById(postulacion.ofertaId),
+      future: context.read<OfferRepository>().getOfertaById(
+        postulacion.ofertaId,
+      ),
       builder: (context, snapshot) {
         final oferta = snapshot.data;
         final color = _estadoColor(postulacion.estado);
